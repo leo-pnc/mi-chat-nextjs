@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Heart, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
@@ -30,6 +30,21 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!active) return;
+      if (session) {
+        router.replace('/menu');
+        return;
+      }
+      setCheckingSession(false);
+    })();
+    return () => { active = false; };
+  }, [router]);
 
   async function handleLogin() {
     setError('');
@@ -56,6 +71,10 @@ export default function LoginPage() {
 
   function handleKeyDown(e) {
     if (e.key === 'Enter') handleLogin();
+  }
+
+  if (checkingSession) {
+    return <div className="login-page" />;
   }
 
   return (
