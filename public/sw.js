@@ -16,6 +16,11 @@ self.addEventListener('push', (event) => {
   );
 });
 
+// Handler de fetch (aunque no lo usemos para cachear nada todavía): su sola
+// presencia es parte de lo que el navegador chequea para considerar la app
+// "instalable" como PWA.
+self.addEventListener('fetch', () => {});
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const chatKey = event.notification.data?.chatKey;
