@@ -717,7 +717,7 @@ function ChatInner() {
             ref={textareaRef}
             rows={1}
             value={input}
-            onFocus={handleInputFocus}
+            onPointerDown={handleInputFocus}
             onChange={(e) => {
               setInput(e.target.value);
               if (blockedWarning) setBlockedWarning('');
