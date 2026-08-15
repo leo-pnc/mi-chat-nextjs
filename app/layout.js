@@ -19,6 +19,13 @@ export const metadata = {
 
 export const viewport = {
   themeColor: '#1c1330',
+  width: 'device-width',
+  initialScale: 1,
+  // Le pide al navegador que, cuando aparece el teclado, REDIMENSIONE el
+  // viewport visible en vez de superponerlo y scrollear la página para
+  // mostrar el campo enfocado (que es lo que hacía que el header "subiera"
+  // y quedara fuera de la pantalla).
+  interactiveWidget: 'resizes-content',
 };
 
 export default function RootLayout({ children }) {
