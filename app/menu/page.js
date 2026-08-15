@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Hand, CalendarCheck, Star, CircleCheck, Check, CheckCheck } from 'lucide-react';
+import { Hand, CalendarCheck, Star, Check, CheckCheck } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { MOODS, getPartnerName, TOPIC_CHATS, CHAT_TITLES, CHAT_ICONS, getWeekStart, formatPreviewText } from '@/lib/config';
 import { formatPreviewTime } from '@/lib/dateFormat';
@@ -266,14 +266,31 @@ export default function MenuPage() {
               : `${partnerName} está desconectado/a`}
           </p>
         </div>
-        <button
-          className="my-mood-chip"
-          onClick={() => setShowMoodPicker(true)}
-          title={`Mood actual: ${MOODS[myMood]?.text || ''} — tocar para cambiar`}
-          style={{ '--mood-color': MOODS[myMood]?.color || '#988289' }}
-        >
-          {(() => { const MyMoodIcon = MOODS[myMood]?.Icon; return MyMoodIcon ? <MyMoodIcon size={18} strokeWidth={2.5} /> : null; })()}
-        </button>
+        <div className="menu-header-actions">
+          <button
+            className="header-icon-btn"
+            onClick={() => router.push('/checkin')}
+            title={checkinDoneThisWeek ? 'Chequeo semanal — ya respondiste esta semana' : 'Chequeo semanal — todavía no respondiste esta semana'}
+          >
+            <CalendarCheck size={19} />
+            {!checkinDoneThisWeek && <span className="header-icon-btn-dot" aria-hidden="true" />}
+          </button>
+          <button
+            className="header-icon-btn"
+            onClick={() => router.push('/agreements')}
+            title="Acuerdos"
+          >
+            <Star size={19} />
+          </button>
+          <button
+            className="my-mood-chip"
+            onClick={() => setShowMoodPicker(true)}
+            title={`Mood actual: ${MOODS[myMood]?.text || ''} — tocar para cambiar`}
+            style={{ '--mood-color': MOODS[myMood]?.color || '#988289' }}
+          >
+            {(() => { const MyMoodIcon = MOODS[myMood]?.Icon; return MyMoodIcon ? <MyMoodIcon size={18} strokeWidth={2.5} /> : null; })()}
+          </button>
+        </div>
       </header>
 
       <div className="menu-scroll">
@@ -315,31 +332,6 @@ export default function MenuPage() {
               </div>
             );
           })}
-
-          <div className="chat-item" onClick={() => router.push('/checkin')}>
-            <div className="chat-icon"><CalendarCheck size={26} /></div>
-            <div className="chat-info">
-              <div className="chat-title">Chequeo semanal</div>
-              <div className="last-message">
-                {checkinDoneThisWeek ? (
-                  <span className="inline-icon-text">
-                    Ya respondiste esta semana <CircleCheck size={14} />
-                  </span>
-                ) : (
-                  '¿Cómo estamos como pareja esta semana?'
-                )}
-              </div>
-            </div>
-            {!checkinDoneThisWeek && <div className="unread-count">!</div>}
-          </div>
-
-          <div className="chat-item" onClick={() => router.push('/agreements')}>
-            <div className="chat-icon"><Star size={26} /></div>
-            <div className="chat-info">
-              <div className="chat-title">Acuerdos</div>
-              <div className="last-message">Mensajes importantes de todos los chats</div>
-            </div>
-          </div>
         </div>
 
         <div style={{ textAlign: 'center', padding: 12 }}>

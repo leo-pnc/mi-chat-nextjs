@@ -648,6 +648,52 @@ button {
 }
 
 /* -------------------- MOOD -------------------- */
+.menu-header-actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.header-icon-btn {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border-soft);
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.15s cubic-bezier(.34,1.56,.64,1), background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.header-icon-btn:hover {
+  background: var(--surface-3);
+  color: var(--text-primary);
+  border-color: var(--mauve);
+}
+
+.header-icon-btn:active {
+  transform: scale(0.88);
+}
+
+.header-icon-btn-dot {
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--wine-bright), var(--wine-deep));
+  border: 2px solid var(--surface-1);
+  animation: badge-bounce-in 0.45s cubic-bezier(.34, 1.56, .64, 1) both;
+}
+
 .my-mood-chip {
   position: relative;
   z-index: 1;
