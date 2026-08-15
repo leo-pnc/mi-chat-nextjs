@@ -633,6 +633,20 @@ button {
   box-shadow: 0 0 12px var(--glow);
 }
 
+.preview-status-icon {
+  vertical-align: -2px;
+  margin-right: 2px;
+  color: var(--text-muted);
+}
+
+.preview-status-icon.delivered {
+  opacity: 0.8;
+}
+
+.preview-status-icon.read {
+  color: #4fc3f7;
+}
+
 /* -------------------- MOOD -------------------- */
 .my-mood-chip {
   position: relative;

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Hand, CalendarCheck, Star, CircleCheck } from 'lucide-react';
+import { Hand, CalendarCheck, Star, CircleCheck, Check, CheckCheck } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { MOODS, getPartnerName, TOPIC_CHATS, CHAT_TITLES, CHAT_ICONS, getWeekStart, formatPreviewText } from '@/lib/config';
 import { formatPreviewTime } from '@/lib/dateFormat';
@@ -296,7 +296,16 @@ export default function MenuPage() {
                   <div className="last-message">
                     {preview ? (
                       <>
-                        <span className="last-message-sender">{preview.who}:</span> {preview.text}
+                        <span className="last-message-sender">{preview.who}:</span>{' '}
+                        {s.lastMessage.sender === currentUser
+                          && !s.lastMessage.deleted
+                          && s.lastMessage.type !== 'timeout_start'
+                          && s.lastMessage.type !== 'timeout_end' && (
+                          <span className={`status-icon preview-status-icon ${s.lastMessage.read ? 'read' : s.lastMessage.delivered ? 'delivered' : ''}`}>
+                            {s.lastMessage.read || s.lastMessage.delivered ? <CheckCheck size={13} /> : <Check size={13} />}
+                          </span>
+                        )}
+                        {preview.text}
                       </>
                     ) : (
                       'Aún no hay mensajes'
