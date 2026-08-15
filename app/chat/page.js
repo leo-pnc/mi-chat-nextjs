@@ -63,6 +63,7 @@ function ChatInner() {
   const [repairDragY, setRepairDragY] = useState(0);
   const repairDragStartY = useRef(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [newMessagesInfo, setNewMessagesInfo] = useState(null);
   const bottomRef = useRef(null);
   const messageContainerRef = useRef(null);
   const lastMessageRowRef = useRef(null);
@@ -70,6 +71,7 @@ function ChatInner() {
   const msgChannelRef = useRef(null);
   const typingResetRef = useRef(null);
   const lastTypingSentRef = useRef(0);
+  const hasScrolledInitiallyRef = useRef(false);
   const [showChatIntro, setShowChatIntro] = useState(true);
 
   useEffect(() => {
@@ -122,7 +124,19 @@ function ChatInner() {
         .order('created_at', { ascending: true });
 
       if (error) console.error(error);
-      setMessages(data || []);
+      const loaded = data || [];
+      setMessages(loaded);
+
+      // Snapshot de "qué estaba sin leer al entrar", para el separador de
+      // "X mensajes nuevos". Se calcula UNA sola vez acá, antes de marcar
+      // como leído, así que no se actualiza en vivo con lo que pase después.
+      const unreadFromPartner = loaded.filter((m) => m.sender === partnerName && !m.read);
+      setNewMessagesInfo(
+        unreadFromPartner.length > 0
+          ? { count: unreadFromPartner.length, firstId: unreadFromPartner[0].id }
+          : null
+      );
+
       markPartnerMessagesRead();
     })();
 
@@ -208,9 +222,26 @@ function ChatInner() {
     };
   }, [currentUser, chatKey, partnerName, markPartnerMessagesRead, markMyMessagesDelivered]);
 
+  // Al entrar al chat, vamos directo al último mensaje sin animar el scroll
+  // (se sentía como un "scrolleo" raro apenas se abría). Los mensajes nuevos
+  // que lleguen después, mientras ya estás mirando el chat, sí bajan con
+  // scroll suave.
   useEffect(() => {
+    if (!hasScrolledInitiallyRef.current) {
+      if (messages.length > 0) {
+        bottomRef.current?.scrollIntoView({ behavior: 'instant' });
+        hasScrolledInitiallyRef.current = true;
+      }
+      return;
+    }
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Si se cambia de chat (chatKey distinto), reseteamos para que el próximo
+  // también entre directo al final sin animar.
+  useEffect(() => {
+    hasScrolledInitiallyRef.current = false;
+  }, [chatKey]);
 
   // Animación de entrada: el ícono del chat aparece grande en el centro
   // y "viaja" hasta su lugar en el header, donde se queda.
@@ -345,6 +376,7 @@ function ChatInner() {
   async function sendRepairMessage(text) {
     if (!currentUser || !chatKey || activeTimeout) return;
     setShowRepairPanel(false);
+    setNewMessagesInfo(null);
 
     const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
     const optimisticMsg = {
@@ -415,6 +447,7 @@ function ChatInner() {
       return;
     }
     setBlockedWarning('');
+    setNewMessagesInfo(null);
 
     if (editingId) {
       const id = editingId;
@@ -579,11 +612,20 @@ function ChatInner() {
           const dateSeparator = showDateSeparator ? (
             <div className="date-separator"><span>{formatDayLabel(msg.created_at)}</span></div>
           ) : null;
+          const showNewDivider = newMessagesInfo && msg.id === newMessagesInfo.firstId;
+          const newDivider = showNewDivider ? (
+            <div className="new-messages-divider">
+              <span>
+                {newMessagesInfo.count} mensaje{newMessagesInfo.count === 1 ? '' : 's'} nuevo{newMessagesInfo.count === 1 ? '' : 's'}
+              </span>
+            </div>
+          ) : null;
 
           if (msg.type === 'timeout_start' || msg.type === 'timeout_end') {
             return (
               <div key={msg.id} className="message-row system" ref={idx === messages.length - 1 ? lastMessageRowRef : null}>
                 {dateSeparator}
+                {newDivider}
                 <div className="system-message">
                   {msg.type === 'timeout_start' ? (
                     <span className="inline-icon-text"><Pause size={14} /> {msg.sender} activó una pausa de {msg.text} min</span>
@@ -605,6 +647,7 @@ function ChatInner() {
               ref={idx === messages.length - 1 ? lastMessageRowRef : null}
             >
               {dateSeparator}
+              {newDivider}
               <div
               className={`chat-message ${isMe ? 'me' : 'them'} ${msg.important ? 'important' : ''}`}
               onClick={() => !isMe && setReplyTo(msg)}
