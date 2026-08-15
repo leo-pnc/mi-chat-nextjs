@@ -66,6 +66,7 @@ function ChatInner() {
   const [newMessagesInfo, setNewMessagesInfo] = useState(null);
   const bottomRef = useRef(null);
   const messageContainerRef = useRef(null);
+  const scrollInnerRef = useRef(null);
   const lastMessageRowRef = useRef(null);
   const textareaRef = useRef(null);
   const msgChannelRef = useRef(null);
@@ -225,20 +226,22 @@ function ChatInner() {
     };
   }, [currentUser, chatKey, partnerName, markPartnerMessagesRead, markMyMessagesDelivered]);
 
-  // Al entrar al chat, vamos directo al último mensaje sin animar el scroll
-  // (se sentía como un "scrolleo" raro apenas se abría). Usamos
-  // useLayoutEffect (no useEffect) para que el salto pase ANTES de que el
-  // navegador pinte esa pantalla — así nunca se alcanza a ver el primer
-  // mensaje arriba antes de saltar al final.
+  // Al entrar al chat, vamos directo al último mensaje sin animar el scroll.
+  // Movemos el scroll a mano sobre el contenedor interno (nunca con
+  // scrollIntoView, que puede terminar arrastrando la página entera si el
+  // layout todavía no se terminó de asentar). useLayoutEffect para que
+  // pase ANTES de pintar la pantalla.
   useLayoutEffect(() => {
+    const el = scrollInnerRef.current;
+    if (!el) return;
     if (!hasScrolledInitiallyRef.current) {
       if (messages.length > 0) {
-        bottomRef.current?.scrollIntoView({ behavior: 'instant' });
+        el.scrollTop = el.scrollHeight;
         hasScrolledInitiallyRef.current = true;
       }
       return;
     }
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
   }, [messages]);
 
   // Si se cambia de chat (chatKey distinto), reseteamos para que el próximo
@@ -294,7 +297,8 @@ function ChatInner() {
     const lastMessageStillVisible = lastMsgRect.top < containerRect.bottom;
     if (lastMessageStillVisible) {
       setTimeout(() => {
-        bottomRef.current?.scrollIntoView({ block: 'end' });
+        const scrollEl = scrollInnerRef.current;
+        if (scrollEl) scrollEl.scrollTop = scrollEl.scrollHeight;
       }, 300);
     }
   }
@@ -664,7 +668,7 @@ function ChatInner() {
             );
           })}
         </div>
-        <div className="message-scroll-inner">
+        <div className="message-scroll-inner" ref={scrollInnerRef}>
         {messages.map((msg, idx) => {
           const prevMsg = messages[idx - 1];
           const showDateSeparator = !prevMsg || !isSameDay(prevMsg.created_at, msg.created_at);
