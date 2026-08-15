@@ -64,6 +64,7 @@ function ChatInner() {
   const repairDragStartY = useRef(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const bottomRef = useRef(null);
+  const messageContainerRef = useRef(null);
   const textareaRef = useRef(null);
   const msgChannelRef = useRef(null);
   const typingResetRef = useRef(null);
@@ -216,6 +217,20 @@ function ChatInner() {
     el.style.height = 'auto';
     el.style.height = `${el.scrollHeight}px`;
   }, [input]);
+
+  // Si estoy viendo el final de la charla y toco para escribir, subo la vista para
+  // seguir viendo los últimos mensajes aunque el teclado tape parte de la pantalla.
+  // Si estoy leyendo algo viejo más arriba, no toco el scroll.
+  function handleInputFocus() {
+    const el = messageContainerRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    if (distanceFromBottom < 150) {
+      setTimeout(() => {
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }, 300);
+    }
+  }
 
   // Reloj para la cuenta regresiva del "tiempo fuera"
   useEffect(() => {
@@ -521,7 +536,7 @@ function ChatInner() {
         </div>
       )}
 
-      <div className={`message-container msg-bg-${chatKey}`}>
+      <div className={`message-container msg-bg-${chatKey}`} ref={messageContainerRef}>
         <div className="chat-wallpaper" aria-hidden="true">
           {WALLPAPER_POSITIONS.map((p, i) => {
             const icons = CHAT_WALLPAPER_ICONS[chatKey] || [];
@@ -702,6 +717,7 @@ function ChatInner() {
             ref={textareaRef}
             rows={1}
             value={input}
+            onFocus={handleInputFocus}
             onChange={(e) => {
               setInput(e.target.value);
               if (blockedWarning) setBlockedWarning('');
