@@ -296,7 +296,7 @@ export default function MenuPage() {
                   <div className="last-message">
                     {preview ? (
                       <>
-                        <span className="last-message-sender">{preview.who}:</span>{' '}
+                        <span className="last-message-sender">{preview.who}:</span> {preview.text}
                         {s.lastMessage.sender === currentUser
                           && !s.lastMessage.deleted
                           && s.lastMessage.type !== 'timeout_start'
@@ -305,7 +305,6 @@ export default function MenuPage() {
                             {s.lastMessage.read || s.lastMessage.delivered ? <CheckCheck size={13} /> : <Check size={13} />}
                           </span>
                         )}
-                        {preview.text}
                       </>
                     ) : (
                       'Aún no hay mensajes'

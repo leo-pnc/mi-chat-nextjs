@@ -635,7 +635,7 @@ button {
 
 .preview-status-icon {
   vertical-align: -2px;
-  margin-right: 2px;
+  margin-left: 4px;
   color: var(--text-muted);
 }
 
