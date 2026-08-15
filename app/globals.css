@@ -1445,7 +1445,7 @@ button {
   left: 0;
   right: 0;
   bottom: 100%;
-  z-index: 10;
+  z-index: 41;
   max-height: 0;
   display: flex;
   flex-wrap: wrap;
