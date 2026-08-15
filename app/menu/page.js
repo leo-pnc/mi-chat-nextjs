@@ -193,23 +193,32 @@ export default function MenuPage() {
   }
 
   function handleHandlePointerDown(e) {
-    e.currentTarget.setPointerCapture(e.pointerId);
+    e.preventDefault();
     dragStartY.current = e.clientY;
-  }
-
-  function handleHandlePointerMove(e) {
-    if (dragStartY.current === null) return;
-    const delta = e.clientY - dragStartY.current;
-    if (delta > 0) setDragY(delta);
-  }
-
-  function handleHandlePointerUp() {
-    if (dragY > 90) {
-      closeMoodPicker();
-      return;
-    }
-    dragStartY.current = null;
     setDragY(0);
+
+    function onMove(ev) {
+      if (dragStartY.current === null) return;
+      const delta = ev.clientY - dragStartY.current;
+      setDragY(delta > 0 ? delta : 0);
+    }
+
+    function onUp() {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+      setDragY((current) => {
+        if (current > 90) {
+          setShowMoodPicker(false);
+        }
+        return 0;
+      });
+      dragStartY.current = null;
+    }
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
   }
 
   function openChat(chatKey) {
@@ -354,9 +363,6 @@ export default function MenuPage() {
             <div
               className="modal-handle-wrap"
               onPointerDown={handleHandlePointerDown}
-              onPointerMove={handleHandlePointerMove}
-              onPointerUp={handleHandlePointerUp}
-              onPointerCancel={handleHandlePointerUp}
             >
               <div className="modal-handle" />
             </div>

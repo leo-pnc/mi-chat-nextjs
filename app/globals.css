@@ -20,6 +20,12 @@
   --text-muted: var(--dust);
   --glow: rgba(155, 63, 160, 0.5);
 
+  /* Fondo distinto para las hojas deslizables (mood, plantilla, reparaciones):
+     mismo mundo nocturno pero un gris-azulado más neutro, para que se
+     distingan del resto de las superficies (tarjetas, headers, etc) */
+  --sheet-top: #221f30;
+  --sheet-bottom: #100e16;
+
   --font-display: 'Fraunces', 'Georgia', serif;
   --font-body: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
@@ -734,7 +740,7 @@ button {
 }
 
 .modal {
-  background: linear-gradient(180deg, var(--surface-3), var(--surface-1));
+  background: linear-gradient(180deg, var(--sheet-top), var(--sheet-bottom));
   border: 1px solid var(--border-soft);
   border-radius: 22px 22px 0 0;
   padding: 8px 24px 24px;
@@ -1656,7 +1662,7 @@ button {
   align-content: flex-start;
   gap: 0;
   padding: 0 16px;
-  background: var(--surface-1);
+  background: linear-gradient(180deg, var(--sheet-top), var(--sheet-bottom));
   border-top: 1px solid var(--border-soft);
   border-radius: 18px 18px 0 0;
   box-shadow: none;

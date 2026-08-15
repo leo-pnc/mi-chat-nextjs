@@ -363,23 +363,32 @@ function ChatInner() {
   }
 
   function handleTemplateHandlePointerDown(e) {
-    e.currentTarget.setPointerCapture(e.pointerId);
+    e.preventDefault();
     templateDragStartY.current = e.clientY;
-  }
-
-  function handleTemplateHandlePointerMove(e) {
-    if (templateDragStartY.current === null) return;
-    const delta = e.clientY - templateDragStartY.current;
-    if (delta > 0) setTemplateDragY(delta);
-  }
-
-  function handleTemplateHandlePointerUp() {
-    if (templateDragY > 90) {
-      closeTemplateModal();
-      return;
-    }
-    templateDragStartY.current = null;
     setTemplateDragY(0);
+
+    function onMove(ev) {
+      if (templateDragStartY.current === null) return;
+      const delta = ev.clientY - templateDragStartY.current;
+      setTemplateDragY(delta > 0 ? delta : 0);
+    }
+
+    function onUp() {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+      setTemplateDragY((current) => {
+        if (current > 90) {
+          setShowTemplateModal(false);
+        }
+        return 0;
+      });
+      templateDragStartY.current = null;
+    }
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
   }
 
   function applyTemplate() {
@@ -431,23 +440,32 @@ function ChatInner() {
   }
 
   function handleRepairPointerDown(e) {
-    e.currentTarget.setPointerCapture(e.pointerId);
+    e.preventDefault();
     repairDragStartY.current = e.clientY;
-  }
-
-  function handleRepairPointerMove(e) {
-    if (repairDragStartY.current === null) return;
-    const delta = e.clientY - repairDragStartY.current;
-    if (delta > 0) setRepairDragY(delta);
-  }
-
-  function handleRepairPointerUp() {
-    if (repairDragY > 40) {
-      closeRepairPanel();
-      return;
-    }
-    repairDragStartY.current = null;
     setRepairDragY(0);
+
+    function onMove(ev) {
+      if (repairDragStartY.current === null) return;
+      const delta = ev.clientY - repairDragStartY.current;
+      setRepairDragY(delta > 0 ? delta : 0);
+    }
+
+    function onUp() {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+      setRepairDragY((current) => {
+        if (current > 40) {
+          setShowRepairPanel(false);
+        }
+        return 0;
+      });
+      repairDragStartY.current = null;
+    }
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
   }
 
   function notifyTyping() {
@@ -792,9 +810,6 @@ function ChatInner() {
           <div
             className="repair-panel-handle-wrap"
             onPointerDown={handleRepairPointerDown}
-            onPointerMove={handleRepairPointerMove}
-            onPointerUp={handleRepairPointerUp}
-            onPointerCancel={handleRepairPointerUp}
           >
             <div className="repair-panel-handle" />
           </div>
@@ -899,9 +914,6 @@ function ChatInner() {
             <div
               className="modal-handle-wrap"
               onPointerDown={handleTemplateHandlePointerDown}
-              onPointerMove={handleTemplateHandlePointerMove}
-              onPointerUp={handleTemplateHandlePointerUp}
-              onPointerCancel={handleTemplateHandlePointerUp}
             >
               <div className="modal-handle" />
             </div>
