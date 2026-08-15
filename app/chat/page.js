@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowLeft, Pause, CircleCheck, Star, Pencil, Trash2, X,
   Check, CheckCheck, NotebookPen, Mail, TriangleAlert, Send, Smile,
+  MessageCircle, Heart, HandHeart,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { MOODS, getPartnerName, CHAT_TITLES, CHAT_ICONS, CHAT_WALLPAPER_ICONS, REPAIR_MESSAGES } from '@/lib/config';
@@ -56,6 +57,8 @@ function ChatInner() {
   const [now, setNow] = useState(() => Date.now());
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [templateFields, setTemplateFields] = useState({ situacion: '', sentimiento: '', necesidad: '' });
+  const [templateDragY, setTemplateDragY] = useState(0);
+  const templateDragStartY = useRef(null);
   const [showRepairPanel, setShowRepairPanel] = useState(false);
   const [repairDragY, setRepairDragY] = useState(0);
   const repairDragStartY = useRef(null);
@@ -267,18 +270,45 @@ function ChatInner() {
   function openTemplateModal() {
     setShowRepairPanel(false);
     setTemplateFields({ situacion: '', sentimiento: '', necesidad: '' });
+    setTemplateDragY(0);
     setShowTemplateModal(true);
+  }
+
+  function closeTemplateModal() {
+    setShowTemplateModal(false);
+    setTemplateDragY(0);
+    templateDragStartY.current = null;
+  }
+
+  function handleTemplateHandlePointerDown(e) {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    templateDragStartY.current = e.clientY;
+  }
+
+  function handleTemplateHandlePointerMove(e) {
+    if (templateDragStartY.current === null) return;
+    const delta = e.clientY - templateDragStartY.current;
+    if (delta > 0) setTemplateDragY(delta);
+  }
+
+  function handleTemplateHandlePointerUp() {
+    if (templateDragY > 90) {
+      closeTemplateModal();
+      return;
+    }
+    templateDragStartY.current = null;
+    setTemplateDragY(0);
   }
 
   function applyTemplate() {
     const { situacion, sentimiento, necesidad } = templateFields;
     if (!situacion.trim() && !sentimiento.trim() && !necesidad.trim()) {
-      setShowTemplateModal(false);
+      closeTemplateModal();
       return;
     }
     const text = `Cuando pasa ${situacion.trim() || '___'}, yo siento ${sentimiento.trim() || '___'}, y necesito ${necesidad.trim() || '___'}.`;
     setInput(text);
-    setShowTemplateModal(false);
+    closeTemplateModal();
     setEditingId(null);
     setReplyTo(null);
   }
@@ -734,14 +764,35 @@ function ChatInner() {
       )}
 
       {showTemplateModal && (
-        <div className="modal-backdrop active" onClick={() => setShowTemplateModal(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3 className="inline-icon-text">Plantear un problema sin acusar <NotebookPen size={16} /></h3>
-            <p className="template-hint">
-              Completá lo que puedas. Ayuda a que {partnerName} no se ponga a la defensiva.
-            </p>
+        <div className="modal-backdrop active" onClick={closeTemplateModal}>
+          <div
+            className="modal"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              transform: `translateY(${templateDragY}px)`,
+              transition: templateDragStartY.current !== null ? 'none' : 'transform 0.25s ease',
+            }}
+          >
+            <div
+              className="modal-handle-wrap"
+              onPointerDown={handleTemplateHandlePointerDown}
+              onPointerMove={handleTemplateHandlePointerMove}
+              onPointerUp={handleTemplateHandlePointerUp}
+              onPointerCancel={handleTemplateHandlePointerUp}
+            >
+              <div className="modal-handle" />
+            </div>
+
+            <div className="template-hero">
+              <div className="template-hero-icon"><NotebookPen size={24} strokeWidth={2.2} /></div>
+              <h3>Plantear un problema sin acusar</h3>
+              <p className="template-hint">
+                Completá lo que puedas. Ayuda a que {partnerName} no se ponga a la defensiva.
+              </p>
+            </div>
+
             <label className="template-field">
-              <span>Cuando pasa...</span>
+              <span className="inline-icon-text"><MessageCircle size={14} /> Cuando pasa...</span>
               <textarea
                 value={templateFields.situacion}
                 onChange={(e) => setTemplateFields((f) => ({ ...f, situacion: e.target.value }))}
@@ -750,7 +801,7 @@ function ChatInner() {
               />
             </label>
             <label className="template-field">
-              <span>yo siento...</span>
+              <span className="inline-icon-text"><Heart size={14} /> yo siento...</span>
               <textarea
                 value={templateFields.sentimiento}
                 onChange={(e) => setTemplateFields((f) => ({ ...f, sentimiento: e.target.value }))}
@@ -759,7 +810,7 @@ function ChatInner() {
               />
             </label>
             <label className="template-field">
-              <span>y necesito...</span>
+              <span className="inline-icon-text"><HandHeart size={14} /> y necesito...</span>
               <textarea
                 value={templateFields.necesidad}
                 onChange={(e) => setTemplateFields((f) => ({ ...f, necesidad: e.target.value }))}
@@ -768,7 +819,7 @@ function ChatInner() {
               />
             </label>
             <div className="template-actions">
-              <button className="template-cancel-btn" onClick={() => setShowTemplateModal(false)}>Cancelar</button>
+              <button className="template-cancel-btn" onClick={closeTemplateModal}>Cancelar</button>
               <button className="template-apply-btn" onClick={applyTemplate}>Usar esta frase</button>
             </div>
           </div>

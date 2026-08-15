@@ -1360,10 +1360,37 @@ button {
   justify-content: center;
 }
 
+.template-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  padding: 4px 8px 18px;
+}
+
+.template-hero-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--wine-bright);
+  background: color-mix(in srgb, var(--wine-bright) 16%, var(--surface-2));
+  box-shadow: 0 0 16px var(--glow);
+  animation: mood-hero-pop 0.45s cubic-bezier(.34,1.56,.64,1);
+}
+
+.template-hero h3 {
+  margin: 2px 0 0;
+  font-size: 18px;
+}
+
 .template-hint {
   font-size: 13px;
   color: var(--text-muted);
-  margin: 4px 0 16px;
+  margin: 0;
 }
 
 .template-field {
@@ -1390,6 +1417,12 @@ button {
   font-size: 14px;
   font-family: inherit;
   outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.template-field textarea:focus {
+  border-color: var(--wine-bright);
+  box-shadow: 0 0 0 3px rgba(155, 63, 160, 0.25);
 }
 
 .template-field textarea::placeholder {
@@ -1420,6 +1453,16 @@ button {
   background: linear-gradient(135deg, var(--wine-bright), var(--wine-deep));
   color: #fff;
   font-weight: 700;
+  box-shadow: 0 6px 18px rgba(155, 63, 160, 0.35);
+  transition: transform 0.15s cubic-bezier(.34,1.56,.64,1);
+}
+
+.template-apply-btn:hover {
+  transform: translateY(-1px);
+}
+
+.template-apply-btn:active {
+  transform: scale(0.97);
 }
 
 /* -------------------- REPARACIONES RÁPIDAS -------------------- */
