@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback, Suspense } from 'react';
+import { useEffect, useLayoutEffect, useState, useRef, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowLeft, Pause, CircleCheck, Star, Pencil, Trash2, X,
@@ -223,10 +223,11 @@ function ChatInner() {
   }, [currentUser, chatKey, partnerName, markPartnerMessagesRead, markMyMessagesDelivered]);
 
   // Al entrar al chat, vamos directo al último mensaje sin animar el scroll
-  // (se sentía como un "scrolleo" raro apenas se abría). Los mensajes nuevos
-  // que lleguen después, mientras ya estás mirando el chat, sí bajan con
-  // scroll suave.
-  useEffect(() => {
+  // (se sentía como un "scrolleo" raro apenas se abría). Usamos
+  // useLayoutEffect (no useEffect) para que el salto pase ANTES de que el
+  // navegador pinte esa pantalla — así nunca se alcanza a ver el primer
+  // mensaje arriba antes de saltar al final.
+  useLayoutEffect(() => {
     if (!hasScrolledInitiallyRef.current) {
       if (messages.length > 0) {
         bottomRef.current?.scrollIntoView({ behavior: 'instant' });
