@@ -802,10 +802,14 @@ function ChatInner() {
       <div className="input-area">
         <div
           className={`repair-panel ${showRepairPanel ? 'open' : ''}`}
-          style={{
-            transform: showRepairPanel && repairDragY > 0 ? `translateY(${repairDragY}px)` : undefined,
-            transition: repairDragStartY.current !== null ? 'none' : undefined,
-          }}
+          style={
+            repairDragY > 0
+              ? {
+                  transform: `translateY(${repairDragY}px)`,
+                  transition: repairDragStartY.current !== null ? 'none' : 'transform 0.32s cubic-bezier(.22, 1, .36, 1)',
+                }
+              : undefined
+          }
         >
           <div
             className="repair-panel-handle-wrap"
