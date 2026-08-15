@@ -183,6 +183,7 @@ a:focus-visible,
 
 html, body {
   height: 100%;
+  background: var(--void);
 }
 
 body {

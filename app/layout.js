@@ -18,7 +18,7 @@ export const metadata = {
 };
 
 export const viewport = {
-  themeColor: '#1c1330',
+  themeColor: '#0a0712',
   width: 'device-width',
   initialScale: 1,
   // Le pide al navegador que, cuando aparece el teclado, REDIMENSIONE el
