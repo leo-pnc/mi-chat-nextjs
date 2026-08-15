@@ -545,7 +545,12 @@ function ChatInner() {
         <button className="icon-only-btn" onClick={() => router.push('/menu')} title="Volver">
           <ArrowLeft size={20} />
         </button>
-        {ChatIcon && !showChatIntro && <ChatIcon size={20} className="header-chat-icon" />}
+        {ChatIcon && (
+          <ChatIcon
+            size={20}
+            className={`header-chat-icon${showChatIntro ? ' pending' : ''}`}
+          />
+        )}
         <div className="header-title-block">
           <div className="chat-title-header">{shortTitle}</div>
           <div className={partnerTyping ? 'typing' : (partnerOnline ? 'online' : 'offline')}>
