@@ -243,12 +243,13 @@ function ChatInner() {
     hasScrolledInitiallyRef.current = false;
   }, [chatKey]);
 
-  // Animación de entrada: el ícono del chat aparece grande en el centro
-  // y "viaja" hasta su lugar en el header, donde se queda.
+  // Animación de entrada: el ícono del chat aparece grande en el centro,
+  // se queda un rato ahí quieto, y recién después "viaja" hasta su lugar
+  // en el header, donde se queda.
   useEffect(() => {
     if (!chatKey) return;
     setShowChatIntro(true);
-    const t = setTimeout(() => setShowChatIntro(false), 700);
+    const t = setTimeout(() => setShowChatIntro(false), 1500);
     return () => clearTimeout(t);
   }, [chatKey]);
 

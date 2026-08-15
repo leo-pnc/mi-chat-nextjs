@@ -914,7 +914,7 @@ button {
   transform: translate(-50%, -50%);
   color: var(--text-primary);
   filter: drop-shadow(0 0 18px var(--glow));
-  animation: chat-intro-travel 0.65s cubic-bezier(.22, 1, .36, 1) both;
+  animation: chat-intro-travel 1.5s cubic-bezier(.22, 1, .36, 1) both;
 }
 
 @keyframes chat-intro-travel {
@@ -925,7 +925,18 @@ button {
     height: 72px;
     opacity: 0;
   }
-  20% {
+  15% {
+    top: 50%;
+    left: 50%;
+    width: 72px;
+    height: 72px;
+    opacity: 1;
+  }
+  55% {
+    top: 50%;
+    left: 50%;
+    width: 72px;
+    height: 72px;
     opacity: 1;
   }
   100% {
