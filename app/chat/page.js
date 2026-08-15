@@ -65,6 +65,7 @@ function ChatInner() {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const bottomRef = useRef(null);
   const messageContainerRef = useRef(null);
+  const lastMessageRowRef = useRef(null);
   const textareaRef = useRef(null);
   const msgChannelRef = useRef(null);
   const typingResetRef = useRef(null);
@@ -218,14 +219,17 @@ function ChatInner() {
     el.style.height = `${el.scrollHeight}px`;
   }, [input]);
 
-  // Si estoy viendo el final de la charla y toco para escribir, subo la vista para
-  // seguir viendo los últimos mensajes aunque el teclado tape parte de la pantalla.
-  // Si estoy leyendo algo viejo más arriba, no toco el scroll.
+  // Si el último mensaje todavía asoma (aunque sea un poco) en el área visible del chat,
+  // subo la vista al tocar para escribir, así sigue viéndose con el teclado abierto.
+  // Si el último mensaje ya no se ve nada (estoy leyendo algo más viejo), no toco el scroll.
   function handleInputFocus() {
-    const el = messageContainerRef.current;
-    if (!el) return;
-    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    if (distanceFromBottom < 150) {
+    const container = messageContainerRef.current;
+    const lastMsg = lastMessageRowRef.current;
+    if (!container || !lastMsg) return;
+    const containerRect = container.getBoundingClientRect();
+    const lastMsgRect = lastMsg.getBoundingClientRect();
+    const lastMessageStillVisible = lastMsgRect.top < containerRect.bottom;
+    if (lastMessageStillVisible) {
       setTimeout(() => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
       }, 300);
@@ -563,7 +567,7 @@ function ChatInner() {
 
           if (msg.type === 'timeout_start' || msg.type === 'timeout_end') {
             return (
-              <div key={msg.id} className="message-row system">
+              <div key={msg.id} className="message-row system" ref={idx === messages.length - 1 ? lastMessageRowRef : null}>
                 {dateSeparator}
                 <div className="system-message">
                   {msg.type === 'timeout_start' ? (
@@ -580,7 +584,11 @@ function ChatInner() {
           const repliedMsg = msg.reply_to_id ? messages.find((m) => m.id === msg.reply_to_id) : null;
 
           return (
-            <div key={msg.id} className={`message-row ${isMe ? 'me' : 'them'}`}>
+            <div
+              key={msg.id}
+              className={`message-row ${isMe ? 'me' : 'them'}`}
+              ref={idx === messages.length - 1 ? lastMessageRowRef : null}
+            >
               {dateSeparator}
               <div
               className={`chat-message ${isMe ? 'me' : 'them'} ${msg.important ? 'important' : ''}`}
