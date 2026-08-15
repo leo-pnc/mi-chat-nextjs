@@ -458,20 +458,17 @@ button {
 }
 
 .menu-header {
-  position: fixed;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 480px;
-  z-index: 20;
+  position: relative;
+  flex-shrink: 0;
+  z-index: 5;
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 18px 20px;
-  background: rgba(13, 9, 16, 0.72);
+  background: rgba(13, 9, 16, 0.85);
   backdrop-filter: blur(18px) saturate(160%);
   -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border-bottom: 1px solid var(--border-soft);
   color: var(--text-primary);
 }
 
@@ -537,7 +534,6 @@ button {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding-top: 84px;
 }
 
 .chat-list {
@@ -918,24 +914,20 @@ button {
   flex-direction: column;
   background: var(--surface-1);
   overflow: hidden;
-  padding-top: 58px;
 }
 
 .chat-header {
-  position: fixed;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 480px;
-  z-index: 20;
+  position: relative;
+  flex-shrink: 0;
+  z-index: 5;
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 10px 14px;
-  background: rgba(13, 9, 16, 0.72);
+  background: rgba(13, 9, 16, 0.85);
   backdrop-filter: blur(18px) saturate(160%);
   -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border-bottom: 1px solid var(--border-soft);
   color: var(--text-primary);
 }
 
@@ -1658,24 +1650,20 @@ button {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding-top: 64px;
 }
 
 .checkin-header {
-  position: fixed;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 480px;
-  z-index: 20;
+  position: relative;
+  flex-shrink: 0;
+  z-index: 5;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 16px;
-  background: rgba(13, 9, 16, 0.72);
+  background: rgba(13, 9, 16, 0.85);
   backdrop-filter: blur(18px) saturate(160%);
   -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border-bottom: 1px solid var(--border-soft);
   color: var(--text-primary);
 }
 
@@ -2155,24 +2143,20 @@ button {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding-top: 64px;
 }
 
 .agreements-header {
-  position: fixed;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 480px;
-  z-index: 20;
+  position: relative;
+  flex-shrink: 0;
+  z-index: 5;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 16px;
-  background: rgba(13, 9, 16, 0.72);
+  background: rgba(13, 9, 16, 0.85);
   backdrop-filter: blur(18px) saturate(160%);
   -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border-bottom: 1px solid var(--border-soft);
   color: var(--text-primary);
 }
 
