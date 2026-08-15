@@ -748,7 +748,7 @@ button {
   max-width: 480px;
   color: var(--text-primary);
   will-change: transform;
-  animation: modal-slide-up-in 0.35s cubic-bezier(.22, 1, .36, 1) both;
+  animation: modal-slide-up-in 0.35s cubic-bezier(.22, 1, .36, 1);
 }
 
 @keyframes modal-slide-up-in {
