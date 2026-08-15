@@ -70,6 +70,7 @@ function ChatInner() {
   const msgChannelRef = useRef(null);
   const typingResetRef = useRef(null);
   const lastTypingSentRef = useRef(0);
+  const [showChatIntro, setShowChatIntro] = useState(true);
 
   useEffect(() => {
     (async () => {
@@ -210,6 +211,15 @@ function ChatInner() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Animación de entrada: el ícono del chat aparece grande en el centro
+  // y "viaja" hasta su lugar en el header, donde se queda.
+  useEffect(() => {
+    if (!chatKey) return;
+    setShowChatIntro(true);
+    const t = setTimeout(() => setShowChatIntro(false), 700);
+    return () => clearTimeout(t);
+  }, [chatKey]);
 
   // Auto-resize del cuadro de texto: arranca en una línea y crece con el contenido hasta el máximo del CSS
   useEffect(() => {
@@ -491,11 +501,16 @@ function ChatInner() {
 
   return (
     <div className="chat-container">
+      {showChatIntro && ChatIcon && (
+        <div className="chat-intro-overlay" aria-hidden="true">
+          <ChatIcon strokeWidth={1.75} className="chat-intro-icon" />
+        </div>
+      )}
       <header className="chat-header">
         <button className="icon-only-btn" onClick={() => router.push('/menu')} title="Volver">
           <ArrowLeft size={20} />
         </button>
-        {ChatIcon && <ChatIcon size={20} className="header-chat-icon" />}
+        {ChatIcon && !showChatIntro && <ChatIcon size={20} className="header-chat-icon" />}
         <div className="header-title-block">
           <div className="chat-title-header">{shortTitle}</div>
           <div className={partnerTyping ? 'typing' : (partnerOnline ? 'online' : 'offline')}>
