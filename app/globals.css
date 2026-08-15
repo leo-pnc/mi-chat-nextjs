@@ -1364,6 +1364,8 @@ button {
 }
 
 .message-input-bar {
+  position: relative;
+  z-index: 42;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1655,7 +1657,7 @@ button {
   left: 0;
   right: 0;
   bottom: 100%;
-  z-index: 41;
+  z-index: 40;
   max-height: 0;
   display: flex;
   flex-wrap: wrap;
