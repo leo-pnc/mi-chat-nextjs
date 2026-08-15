@@ -1140,13 +1140,31 @@ button {
   margin-top: 4px;
 }
 
+.status-icon {
+  display: inline-flex;
+  transition: color 0.3s ease;
+}
+
 .status-icon.delivered {
   opacity: 0.7;
 }
 
 .status-icon.read {
-  color: #e3b8c9;
+  color: #4fc3f7;
   opacity: 1;
+  animation: status-read-pop 0.35s cubic-bezier(.34, 1.56, .64, 1);
+}
+
+@keyframes status-read-pop {
+  0% { transform: scale(0.7); }
+  60% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-icon.read {
+    animation: none !important;
+  }
 }
 
 .message-actions {
