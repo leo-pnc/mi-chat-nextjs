@@ -231,7 +231,7 @@ function ChatInner() {
     const lastMessageStillVisible = lastMsgRect.top < containerRect.bottom;
     if (lastMessageStillVisible) {
       setTimeout(() => {
-        bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        bottomRef.current?.scrollIntoView({ block: 'end' });
       }, 300);
     }
   }
