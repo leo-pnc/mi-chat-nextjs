@@ -261,7 +261,10 @@ export default function CheckinPage() {
         <div className="checkin-scroll-inner">
           {streak > 0 && (
             <div className="checkin-streak-banner">
-              <Flame size={20} className="checkin-streak-flame" />
+              <span className="checkin-streak-flame-wrap">
+                <span className="checkin-streak-flame-ember" />
+                <Flame size={22} className="checkin-streak-flame" fill="currentColor" fillOpacity={0.35} />
+              </span>
               <span>
                 <strong>{streak}</strong> semana{streak === 1 ? '' : 's'} seguida{streak === 1 ? '' : 's'} respondiendo los dos
                 {!currentComplete && ' — respondé esta semana para seguir la racha'}
