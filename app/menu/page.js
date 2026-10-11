@@ -295,7 +295,7 @@ export default function MenuPage() {
           
           {/* Fotografía de Fondo */}
           <img 
-            src="/tazas-inicio.jpg" 
+            src="/tazas-inicio.png" 
             alt="Nuestros momentos" 
             className="absolute inset-0 w-full h-full object-cover opacity-85"
           />
