@@ -226,28 +226,31 @@ export default function MenuPage() {
 {/* HEADER TECITO */}
       <header className="flex justify-between items-center px-6 pt-10 pb-4 relative z-10">
         
-        {/* Lado Izquierdo: Título */}
+        {/* Lado Izquierdo: Título y Corazón */}
         <div className="flex items-center">
           <h1 
-            className="text-[40px] text-[#F4D1D1] tracking-wide"
-            style={{ fontFamily: 'cursive, "Brush Script MT"' }}
+            className="text-[44px] text-[#F4D1D1] tracking-wide leading-none select-none font-semibold"
+            style={{ fontFamily: '"Caveat", cursive', transform: 'rotate(-2deg)' }}
           >
             Tecito
           </h1>
           
-          {/* Corazón artesanal estilo dibujado a mano */}
+          {/* Corazón artesanal estilizado estilo dibujo */}
           <svg 
             viewBox="0 0 200 200" 
-            width="30" 
-            height="30" 
-            className="ml-2 mt-1 -rotate-12 text-[#F4D1D1] opacity-90 drop-shadow-sm"
+            width="32" 
+            height="32" 
+            className="ml-1.5 mt-0.5 text-[#F4D1D1] opacity-90 drop-shadow-sm flex-shrink-0"
             fill="none"
             stroke="currentColor"
-            strokeWidth="12"
+            strokeWidth="11"
             strokeLinecap="round"
             strokeLinejoin="round"
+            style={{ transform: 'rotate(2deg)' }}
           >
-            <path d="M100 170 C -20 100, 20 20, 100 60 C 180 20, 220 100, 100 170 Z" />
+            {/* Trazado artesanal asimétrico */}
+            <path d="M 100,60 C 80,30 20,30 20,85 C 20,135 90,165 100,180 C 110,165 180,135 180,85 C 180,30 120,30 100,60 Z" />
+            <path d="M 100,180 C 95,178 92,185 98,187" strokeWidth="6" />
           </svg>
         </div>
         
@@ -264,12 +267,12 @@ export default function MenuPage() {
               alt={partnerName || "Pareja"} 
               className="w-full h-full object-cover"
             />
-            {/* Puntito verde de conexión */}
+            {/* Puntito de conexión */}
             <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-br-xl rounded-tl-md ${partnerOnline ? 'bg-green-500' : 'bg-zinc-600'}`} />
           </div>
 
           {/* Ícono de Estado de Ánimo de la pareja */}
-          <div style={{ color: MOODS[partnerMood]?.color || '#A1A1AA' }}>
+          <div style={{ color: MOODS[partnerMood]?.color || '#A1A1AA' }} className="flex items-center justify-center">
             {(() => { 
               const PartnerMoodIcon = MOODS[partnerMood]?.Icon; 
               return PartnerMoodIcon ? <PartnerMoodIcon size={24} strokeWidth={2.2} /> : null; 
