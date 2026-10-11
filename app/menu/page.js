@@ -289,7 +289,7 @@ export default function MenuPage() {
         {/* HERO BANNER */}
         <div className="relative w-full h-44 rounded-3xl overflow-hidden shadow-xl mt-2">
           <img 
-            src="./../public/fondo_principal.png" 
+            src="../../public/fondo_principal.png" 
             alt="Atardecer" 
             className="absolute inset-0 w-full h-full object-cover opacity-70"
           />
