@@ -43,6 +43,10 @@ const FORTUNES = [
   "Vale por un abrazo de 20 segundos apenas nos veamos."
 ];
 
+const getFormattedDate = () => {
+  return new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
+};
+
 export default function MenuPage() {
   const router = useRouter();
   
@@ -286,19 +290,66 @@ export default function MenuPage() {
 
       <main className="px-6 space-y-6 relative z-10">
         
-        {/* HERO BANNER */}
-        <div className="relative w-full h-44 rounded-3xl overflow-hidden shadow-xl mt-2">
+        {/* HERO BANNER INTERACTIVO (Fiel a la referencia) */}
+        <div className="relative w-full h-52 rounded-[32px] overflow-hidden shadow-2xl mt-2 border border-zinc-800/50">
+          
+          {/* Fotografía de Fondo */}
           <img 
-            src="../../public/fondo_principal.png" 
-            alt="Atardecer" 
-            className="absolute inset-0 w-full h-full object-cover opacity-70"
+            src="/tazas-inicio.jpg" 
+            alt="Nuestros momentos" 
+            className="absolute inset-0 w-full h-full object-cover opacity-85"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
-          <div className="absolute bottom-0 left-0 p-5">
-            <h2 className="text-2xl font-serif italic text-[#F4D1D1] leading-tight mb-1.5">
-              Qué bueno tenerte acá ♡
-            </h2>
-            <p className="text-xs text-zinc-300 font-light">Seguimos construyendo nuestros momentos.</p>
+          {/* Capa de penumbra cálida */}
+          <div className="absolute inset-0 bg-gradient-to-tr from-black/80 via-black/35 to-transparent"></div>
+
+          {/* Contenido del Banner */}
+          <div className="absolute inset-0 p-6 flex flex-col justify-between z-10 select-none">
+            
+            {/* Sección superior: Fecha */}
+            <div className="flex items-start gap-3">
+              <div className="text-[#F2879D] mt-1.5 flex-shrink-0">
+                {/* Ícono de Calendario en tono rosa */}
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                  <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01" strokeWidth="2.5" />
+                </svg>
+              </div>
+              <div>
+                <span className="text-[11px] text-zinc-300 font-medium block leading-none">Hoy es...</span>
+                <span className={`text-2xl text-[#FDF2F2] leading-tight block mt-0.5 ${dancingFont.className}`}>
+                  {getFormattedDate()}
+                </span>
+              </div>
+            </div>
+
+            {/* Sección inferior: Tarjeta Glassmorphism y paginación */}
+            <div className="flex items-end justify-between">
+              
+              {/* Tarjeta translúcida estilo Glass */}
+              <div className="bg-[#1c1c1e]/45 backdrop-blur-md border border-white/10 px-4 py-3 rounded-[20px] max-w-[210px] flex items-center gap-3 shadow-lg">
+                <div className="text-[#F2879D] flex-shrink-0">
+                  {/* Pequeño corazón en el mensaje */}
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                  </svg>
+                </div>
+                <p className={`text-[15px] text-[#FDF2F2] leading-tight font-medium ${dancingFont.className}`}>
+                  Nada mejor que compartir la vida contigo. ♡
+                </p>
+              </div>
+
+              {/* Indicadores de página (Dots de paginación) */}
+              <div className="flex gap-1.5 pb-1">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#F2879D] shadow-sm"></span>
+                <span className="w-2.5 h-2.5 rounded-full bg-zinc-600/70"></span>
+                <span className="w-2.5 h-2.5 rounded-full bg-zinc-600/70"></span>
+              </div>
+
+            </div>
+
           </div>
         </div>
 
