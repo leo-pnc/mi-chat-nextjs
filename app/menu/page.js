@@ -14,7 +14,7 @@ import { Dancing_Script } from 'next/font/google';
 
 const dancingFont = Dancing_Script({ 
   subsets: ['latin'], 
-  weight: ['600', '700'] 
+  weight: ['400', '500'] 
 });
 
 // Puntitos decorativos fijos
@@ -235,20 +235,20 @@ export default function MenuPage() {
         {/* Lado Izquierdo: Título y Corazón */}
         <div className="flex items-center">
           <h1 
-            className={`text-[46px] text-[#F4D1D1] tracking-wide leading-none select-none mt-1 ${dancingFont.className}`}
+            className={`text-[46px] text-[#FDF2F2] tracking-wide font-normal leading-none select-none mt-1 ${dancingFont.className}`}
           >
             Tecito
           </h1>
           
-          {/* Corazón artesanal hueco (calcado de la referencia) */}
+          {/* Corazón artesanal (Trazo más oscuro y natural) */}
           <svg 
             viewBox="0 0 24 24" 
             width="34" 
             height="34" 
-            className="ml-1.5 mt-2 text-[#F4D1D1] opacity-90"
+            className="ml-1.5 mt-2 text-[#F2879D]"
             fill="none"
             stroke="currentColor"
-            strokeWidth="2.2"
+            strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
           >
