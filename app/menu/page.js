@@ -10,6 +10,12 @@ import { supabase } from '@/lib/supabaseClient';
 import { MOODS, getPartnerName, TOPIC_CHATS, CHAT_TITLES, CHAT_ICONS, getWeekStart, formatPreviewText } from '@/lib/config';
 import { formatPreviewTime } from '@/lib/dateFormat';
 import { enablePushNotifications } from '@/lib/push';
+import { Dancing_Script } from 'next/font/google';
+
+const dancingFont = Dancing_Script({ 
+  subsets: ['latin'], 
+  weight: ['600', '700'] 
+});
 
 // Puntitos decorativos fijos
 const TWINKLE_DOTS = [
@@ -229,28 +235,24 @@ export default function MenuPage() {
         {/* Lado Izquierdo: Título y Corazón */}
         <div className="flex items-center">
           <h1 
-            className="text-[44px] text-[#F4D1D1] tracking-wide leading-none select-none font-semibold"
-            style={{ fontFamily: '"Caveat", cursive', transform: 'rotate(-2deg)' }}
+            className={`text-[46px] text-[#F4D1D1] tracking-wide leading-none select-none mt-1 ${dancingFont.className}`}
           >
             Tecito
           </h1>
           
-          {/* Corazón artesanal estilizado estilo dibujo */}
+          {/* Corazón artesanal hueco (calcado de la referencia) */}
           <svg 
-            viewBox="0 0 200 200" 
-            width="32" 
-            height="32" 
-            className="ml-1.5 mt-0.5 text-[#F4D1D1] opacity-90 drop-shadow-sm flex-shrink-0"
+            viewBox="0 0 24 24" 
+            width="34" 
+            height="34" 
+            className="ml-1.5 mt-2 text-[#F4D1D1] opacity-90"
             fill="none"
             stroke="currentColor"
-            strokeWidth="11"
+            strokeWidth="2.2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            style={{ transform: 'rotate(2deg)' }}
           >
-            {/* Trazado artesanal asimétrico */}
-            <path d="M 100,60 C 80,30 20,30 20,85 C 20,135 90,165 100,180 C 110,165 180,135 180,85 C 180,30 120,30 100,60 Z" />
-            <path d="M 100,180 C 95,178 92,185 98,187" strokeWidth="6" />
+            <path d="M12 21.5 C12 21.5 2.5 14 3 8 C3.5 3.5 9.5 3.5 12 7.5 C14.5 3.5 20.5 3.5 21 8 C21.5 14 11.5 22 11.5 22" />
           </svg>
         </div>
         
@@ -259,7 +261,7 @@ export default function MenuPage() {
           
           {/* Foto Cuadrada con Bordes Redondos */}
           <div 
-            className="w-12 h-12 rounded-xl border flex-shrink-0 overflow-hidden shadow-sm relative transition-colors duration-300"
+            className="w-12 h-12 rounded-[14px] border-[1.5px] flex-shrink-0 overflow-hidden shadow-sm relative transition-colors duration-300"
             style={{ borderColor: MOODS[partnerMood]?.color || '#52525B' }}
           >
             <img 
@@ -268,14 +270,14 @@ export default function MenuPage() {
               className="w-full h-full object-cover"
             />
             {/* Puntito de conexión */}
-            <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-br-xl rounded-tl-md ${partnerOnline ? 'bg-green-500' : 'bg-zinc-600'}`} />
+            <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-br-[12px] rounded-tl-lg border-2 border-[#121212] ${partnerOnline ? 'bg-green-500' : 'bg-zinc-600'}`} />
           </div>
 
           {/* Ícono de Estado de Ánimo de la pareja */}
           <div style={{ color: MOODS[partnerMood]?.color || '#A1A1AA' }} className="flex items-center justify-center">
             {(() => { 
               const PartnerMoodIcon = MOODS[partnerMood]?.Icon; 
-              return PartnerMoodIcon ? <PartnerMoodIcon size={24} strokeWidth={2.2} /> : null; 
+              return PartnerMoodIcon ? <PartnerMoodIcon size={26} strokeWidth={2.2} /> : null; 
             })()}
           </div>
 
