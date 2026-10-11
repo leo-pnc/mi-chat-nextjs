@@ -9,11 +9,16 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "lucide-react": "^0.462.0",
     "next": "^16.2.11",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "@supabase/supabase-js": "^2.45.0",
-    "web-push": "^3.6.7",
-    "lucide-react": "^0.462.0"
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.6.1",
+    "postcss": "^8.5.29",
+    "tailwindcss": "^4.3.3"
   }
 }
