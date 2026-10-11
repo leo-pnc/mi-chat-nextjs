@@ -1,14 +1,17 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Hand, CalendarCheck, Star, Check, CheckCheck } from 'lucide-react';
+import { 
+  Hand, CalendarCheck, Star, Check, CheckCheck, 
+  Image as ImageIcon, MessageCircle, Heart, Menu, Home, RefreshCw 
+} from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { MOODS, getPartnerName, TOPIC_CHATS, CHAT_TITLES, CHAT_ICONS, getWeekStart, formatPreviewText } from '@/lib/config';
 import { formatPreviewTime } from '@/lib/dateFormat';
 import { enablePushNotifications } from '@/lib/push';
 
-// Puntitos decorativos fijos (no random) para el fondo del menú
+// Puntitos decorativos fijos
 const TWINKLE_DOTS = [
   { top: 6, left: 12, size: 3, color: 'var(--wine-bright)', duration: 4.5, delay: 0 },
   { top: 14, left: 82, size: 2, color: 'var(--mauve)', duration: 5.2, delay: 0.6 },
@@ -26,8 +29,18 @@ const TWINKLE_DOTS = [
   { top: 18, left: 95, size: 2, color: 'var(--dust)', duration: 5.8, delay: 0.1 },
 ];
 
+const FORTUNES = [
+  "Las mejores cosas de la vida también se disfrutan en pareja.",
+  "Hoy es un gran día para recordarte lo mucho que te amo.",
+  "Tu sonrisa es mi parte favorita de la rutina.",
+  "Gracias por hacer que lo ordinario se vuelva extraordinario.",
+  "Vale por un abrazo de 20 segundos apenas nos veamos."
+];
+
 export default function MenuPage() {
   const router = useRouter();
+  
+  // --- ESTADOS ORIGINALES ---
   const [currentUser, setCurrentUser] = useState(null);
   const [myMood, setMyMood] = useState('😴');
   const [partnerMood, setPartnerMood] = useState('?');
@@ -37,6 +50,10 @@ export default function MenuPage() {
   const [dragY, setDragY] = useState(0);
   const dragStartY = useRef(null);
   const [checkinDoneThisWeek, setCheckinDoneThisWeek] = useState(true);
+
+  // --- ESTADOS PARA LA GALLETA ---
+  const [cookieText, setCookieText] = useState('Tocá para abrir tu galleta de hoy');
+  const [cookieOpened, setCookieOpened] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -60,15 +77,10 @@ export default function MenuPage() {
       .in('chat_id', TOPIC_CHATS)
       .order('created_at', { ascending: true });
 
-    if (error) {
-      console.error('Error cargando resumen de chats:', error);
-      return;
-    }
+    if (error) return;
 
     const summary = {};
-    TOPIC_CHATS.forEach((key) => {
-      summary[key] = { lastMessage: null, unreadCount: 0 };
-    });
+    TOPIC_CHATS.forEach((key) => { summary[key] = { lastMessage: null, unreadCount: 0 }; });
 
     (data || []).forEach((msg) => {
       const s = summary[msg.chat_id];
@@ -76,19 +88,12 @@ export default function MenuPage() {
       s.lastMessage = msg;
       if (msg.sender === partnerName && !msg.read) s.unreadCount += 1;
     });
-
     setChatsSummary(summary);
   }, [partnerName]);
 
-  // Marca mis propios mensajes enviados (en cualquier chat) como "entregados"
-  // en cuanto detecto por presencia que mi pareja está online.
   const markMyMessagesDelivered = useCallback(async () => {
     if (!currentUser) return;
-    await supabase
-      .from('messages')
-      .update({ delivered: true })
-      .eq('sender', currentUser)
-      .eq('delivered', false);
+    await supabase.from('messages').update({ delivered: true }).eq('sender', currentUser).eq('delivered', false);
   }, [currentUser]);
 
   useEffect(() => {
@@ -96,81 +101,41 @@ export default function MenuPage() {
 
     loadChatsSummary();
 
-    // Cargar / crear mi estado de mood
     (async () => {
-      const { data } = await supabase
-        .from('user_status')
-        .select('*')
-        .eq('user_name', currentUser)
-        .maybeSingle();
-
-      if (data) {
-        setMyMood(data.mood);
-      } else {
-        await supabase.from('user_status').upsert({ user_name: currentUser, mood: '😴' });
-      }
+      const { data } = await supabase.from('user_status').select('*').eq('user_name', currentUser).maybeSingle();
+      if (data) setMyMood(data.mood);
+      else await supabase.from('user_status').upsert({ user_name: currentUser, mood: '😴' });
     })();
 
-    // Cargar mood actual de la pareja
     (async () => {
-      const { data } = await supabase
-        .from('user_status')
-        .select('*')
-        .eq('user_name', partnerName)
-        .maybeSingle();
+      const { data } = await supabase.from('user_status').select('*').eq('user_name', partnerName).maybeSingle();
       if (data) setPartnerMood(data.mood);
     })();
 
-    // Ver si ya respondí el chequeo semanal de esta semana
     (async () => {
-      const { data } = await supabase
-        .from('weekly_checkins')
-        .select('user_name')
-        .eq('user_name', currentUser)
-        .eq('week_start', getWeekStart())
-        .maybeSingle();
+      const { data } = await supabase.from('weekly_checkins').select('user_name').eq('user_name', currentUser).eq('week_start', getWeekStart()).maybeSingle();
       setCheckinDoneThisWeek(!!data);
     })();
 
-    // Realtime: mensajes nuevos/actualizados en los chats temáticos
-    const messagesChannel = supabase
-      .channel('menu-messages')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, (payload) => {
-        const chatId = payload.new?.chat_id || payload.old?.chat_id;
-        if (!TOPIC_CHATS.includes(chatId)) return;
-        loadChatsSummary();
-      })
-      .subscribe();
+    const messagesChannel = supabase.channel('menu-messages').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, (payload) => {
+      const chatId = payload.new?.chat_id || payload.old?.chat_id;
+      if (!TOPIC_CHATS.includes(chatId)) return;
+      loadChatsSummary();
+    }).subscribe();
 
-    // Realtime: cambio de mood de la pareja
-    const statusChannel = supabase
-      .channel('menu-status')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'user_status', filter: `user_name=eq.${partnerName}` },
-        (payload) => {
-          if (payload.new) setPartnerMood(payload.new.mood);
-        }
-      )
-      .subscribe();
+    const statusChannel = supabase.channel('menu-status').on('postgres_changes', { event: '*', schema: 'public', table: 'user_status', filter: `user_name=eq.${partnerName}` }, (payload) => {
+      if (payload.new) setPartnerMood(payload.new.mood);
+    }).subscribe();
 
-    // Presence: saber si la pareja está online AHORA
-    const presenceChannel = supabase.channel('presence-room', {
-      config: { presence: { key: currentUser } },
+    const presenceChannel = supabase.channel('presence-room', { config: { presence: { key: currentUser } } });
+    presenceChannel.on('presence', { event: 'sync' }, () => {
+      const state = presenceChannel.presenceState();
+      const isPartnerOnline = !!state[partnerName];
+      setPartnerOnline(isPartnerOnline);
+      if (isPartnerOnline) markMyMessagesDelivered();
+    }).subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') await presenceChannel.track({ user: currentUser, online_at: new Date().toISOString() });
     });
-
-    presenceChannel
-      .on('presence', { event: 'sync' }, () => {
-        const state = presenceChannel.presenceState();
-        const isPartnerOnline = !!state[partnerName];
-        setPartnerOnline(isPartnerOnline);
-        if (isPartnerOnline) markMyMessagesDelivered();
-      })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          await presenceChannel.track({ user: currentUser, online_at: new Date().toISOString() });
-        }
-      });
 
     return () => {
       supabase.removeChannel(messagesChannel);
@@ -179,11 +144,31 @@ export default function MenuPage() {
     };
   }, [currentUser, partnerName, loadChatsSummary, markMyMessagesDelivered]);
 
+  // --- LÓGICA DE LA GALLETA ---
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const lastDate = localStorage.getItem('tecito_cookie_date');
+    const savedMsg = localStorage.getItem('tecito_cookie_msg');
+    
+    if (lastDate === today && savedMsg) {
+      setCookieText(savedMsg);
+      setCookieOpened(true);
+    }
+  }, []);
+
+  const openCookie = () => {
+    if (cookieOpened) return;
+    const today = new Date().toISOString().split('T')[0];
+    const msg = FORTUNES[Math.floor(Math.random() * FORTUNES.length)];
+    localStorage.setItem('tecito_cookie_date', today);
+    localStorage.setItem('tecito_cookie_msg', msg);
+    setCookieText(msg);
+    setCookieOpened(true);
+  };
+
   async function handleMoodSelect(emoji) {
     setMyMood(emoji);
-    await supabase
-      .from('user_status')
-      .upsert({ user_name: currentUser, mood: emoji, updated_at: new Date().toISOString() });
+    await supabase.from('user_status').upsert({ user_name: currentUser, mood: emoji, updated_at: new Date().toISOString() });
   }
 
   function closeMoodPicker() {
@@ -196,39 +181,27 @@ export default function MenuPage() {
     e.preventDefault();
     dragStartY.current = e.clientY;
     setDragY(0);
-
     function onMove(ev) {
       if (dragStartY.current === null) return;
       const delta = ev.clientY - dragStartY.current;
       setDragY(delta > 0 ? delta : 0);
     }
-
     function onUp() {
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
       window.removeEventListener('pointercancel', onUp);
       setDragY((current) => {
-        if (current > 90) {
-          setShowMoodPicker(false);
-        }
+        if (current > 90) setShowMoodPicker(false);
         return 0;
       });
       dragStartY.current = null;
     }
-
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
     window.addEventListener('pointercancel', onUp);
   }
 
-  function openChat(chatKey) {
-    router.push(`/chat?chatKey=${chatKey}`);
-  }
-
-  function logout() {
-    supabase.auth.signOut();
-    router.push('/');
-  }
+  function openChat(chatKey) { router.push(`/chat?chatKey=${chatKey}`); }
 
   function getGreeting() {
     const h = new Date().getHours();
@@ -240,136 +213,187 @@ export default function MenuPage() {
 
   if (!currentUser) return null;
 
-  const twinkleDots = TWINKLE_DOTS;
-
   return (
-    <div className="menu-container">
-      <div className="menu-wallpaper" aria-hidden="true">
-        {twinkleDots.map((dot, i) => (
+    <div className="min-h-screen bg-[#121212] text-white font-sans pb-24 relative overflow-x-hidden">
+      
+      {/* Fondo de estrellas (Mantiene tus clases CSS actuales) */}
+      <div className="menu-wallpaper opacity-30 pointer-events-none absolute inset-0" aria-hidden="true">
+        {TWINKLE_DOTS.map((dot, i) => (
           <span
             key={i}
             className="menu-twinkle"
             style={{
-              top: `${dot.top}%`,
-              left: `${dot.left}%`,
-              width: dot.size,
-              height: dot.size,
-              background: dot.color,
-              animationDuration: `${dot.duration}s`,
-              animationDelay: `${dot.delay}s`,
+              top: `${dot.top}%`, left: `${dot.left}%`, width: dot.size, height: dot.size,
+              background: dot.color, animationDuration: `${dot.duration}s`, animationDelay: `${dot.delay}s`,
             }}
           />
         ))}
       </div>
 
-      <header className="menu-header">
-        <div className="menu-header-text">
-          <span className="menu-greeting-eyebrow">{getGreeting()}</span>
-          <h2>
-            {currentUser} <Hand size={20} className="inline-icon" />
-          </h2>
-          <p className={partnerOnline ? 'online' : 'offline'}>
-            <span className={`status-dot ${partnerOnline ? 'online' : 'offline'}`} aria-hidden="true" />
-            {partnerOnline
-              ? `${partnerName} está en línea (${MOODS[partnerMood]?.text || '?'})`
-              : `${partnerName} está desconectado/a`}
-          </p>
+      {/* HEADER TECITO */}
+      <header className="flex justify-between items-center px-6 pt-10 pb-4 relative z-10">
+        <div>
+          <span className="text-[10px] uppercase tracking-widest text-zinc-400 font-semibold mb-1 block">
+            {getGreeting()}, {currentUser}
+          </span>
+          <h1 className="text-4xl font-serif italic text-[#F4D1D1]">Tecito ♡</h1>
+          <p className="text-xs text-zinc-400 mt-1">Tu lugar, siempre. ♡</p>
         </div>
-        <div className="menu-header-actions">
-          <button
-            className="header-icon-btn"
-            onClick={() => router.push('/checkin')}
-            title={checkinDoneThisWeek ? 'Chequeo semanal — ya respondiste esta semana' : 'Chequeo semanal — todavía no respondiste esta semana'}
-          >
-            <CalendarCheck size={19} />
-            {!checkinDoneThisWeek && <span className="header-icon-btn-dot" aria-hidden="true" />}
-          </button>
-          <button
-            className="header-icon-btn"
-            onClick={() => router.push('/agreements')}
-            title="Acuerdos"
-          >
-            <Star size={19} />
-          </button>
-          <button
-            className="my-mood-chip"
+        
+        <div className="flex flex-col items-center gap-2">
+          {/* Avatar con Estado */}
+          <div className="relative">
+            <div className="w-12 h-12 rounded-full border-2 border-[#F4D1D1] bg-zinc-800 flex items-center justify-center text-xl shadow-lg">
+              {MOODS[partnerMood]?.text || '☕'}
+            </div>
+            <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-[#121212] ${partnerOnline ? 'bg-green-500' : 'bg-zinc-500'}`} />
+          </div>
+          {/* Botón para cambiar MI mood */}
+          <button 
             onClick={() => setShowMoodPicker(true)}
-            title={`Mood actual: ${MOODS[myMood]?.text || ''} — tocar para cambiar`}
-            style={{ '--mood-color': MOODS[myMood]?.color || '#988289' }}
+            className="bg-[#2A2A2A] text-xs px-3 py-1 rounded-full border border-zinc-700 flex items-center gap-1 active:scale-95"
           >
-            {(() => { const MyMoodIcon = MOODS[myMood]?.Icon; return MyMoodIcon ? <MyMoodIcon size={18} strokeWidth={2.5} /> : null; })()}
+            Yo: {MOODS[myMood]?.text || '😴'}
           </button>
         </div>
       </header>
 
-      <div className="menu-scroll">
-        <div className="chat-list">
-          {TOPIC_CHATS.map((key) => {
-            const s = chatsSummary[key] || {};
-            const preview = formatPreviewText(s.lastMessage, currentUser, partnerName);
-            return (
-              <div key={key} className="chat-item" onClick={() => openChat(key)}>
-                <div className="chat-icon">
-                  {(() => { const TopicIcon = CHAT_ICONS[key]; return TopicIcon ? <TopicIcon size={26} /> : null; })()}
-                </div>
-                <div className="chat-info">
-                  <div className="chat-info-top">
-                    <div className="chat-title">{CHAT_TITLES[key]}</div>
-                    {s.lastMessage && (
-                      <span className="chat-item-time">{formatPreviewTime(s.lastMessage.created_at)}</span>
-                    )}
-                  </div>
-                  <div className="last-message">
-                    {preview ? (
-                      <>
-                        <span className="last-message-sender">{preview.who}:</span> {preview.text}
-                        {s.lastMessage.sender === currentUser
-                          && !s.lastMessage.deleted
-                          && s.lastMessage.type !== 'timeout_start'
-                          && s.lastMessage.type !== 'timeout_end' && (
-                          <span className={`status-icon preview-status-icon ${s.lastMessage.read ? 'read' : s.lastMessage.delivered ? 'delivered' : ''}`}>
-                            {s.lastMessage.read || s.lastMessage.delivered ? <CheckCheck size={13} /> : <Check size={13} />}
-                          </span>
-                        )}
-                      </>
-                    ) : (
-                      'Aún no hay mensajes'
-                    )}
-                  </div>
-                </div>
-                {s.unreadCount > 0 && <div className="unread-count">{s.unreadCount}</div>}
-              </div>
-            );
-          })}
+      <main className="px-6 space-y-6 relative z-10">
+        
+        {/* HERO BANNER */}
+        <div className="relative w-full h-44 rounded-3xl overflow-hidden shadow-xl mt-2">
+          <img 
+            src="https://images.unsplash.com/photo-1476820897991-4b5cb38d2f50?q=80&w=800&auto=format&fit=crop" 
+            alt="Atardecer" 
+            className="absolute inset-0 w-full h-full object-cover opacity-70"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
+          <div className="absolute bottom-0 left-0 p-5">
+            <h2 className="text-2xl font-serif italic text-[#F4D1D1] leading-tight mb-1.5">
+              Qué bueno tenerte acá ♡
+            </h2>
+            <p className="text-xs text-zinc-300 font-light">Seguimos construyendo nuestros momentos.</p>
+          </div>
         </div>
 
-        <div style={{ textAlign: 'center', padding: 12 }}>
-          <button onClick={logout} style={{ background: 'none', border: 'none', color: '#888', fontSize: 13 }}>
-            Cerrar sesión
+        {/* GRILLA DE MÓDULOS */}
+        <div className="grid grid-cols-4 gap-3">
+          <button onClick={() => router.push('/galeria')} className="bg-[#6E5A63] p-3 rounded-2xl flex flex-col items-center justify-center text-center gap-1.5 aspect-square active:scale-95 transition-transform">
+            <ImageIcon size={22} className="text-zinc-100" />
+            <span className="block font-medium text-[11px]">Fotos</span>
+          </button>
+          
+          <button onClick={() => openChat(TOPIC_CHATS[0])} className="bg-[#8A5A5C] p-3 rounded-2xl flex flex-col items-center justify-center text-center gap-1.5 aspect-square active:scale-95 transition-transform">
+            <MessageCircle size={22} className="text-zinc-100" />
+            <span className="block font-medium text-[11px]">Chat</span>
+          </button>
+
+          <button onClick={() => router.push('/agreements')} className="bg-[#967454] p-3 rounded-2xl flex flex-col items-center justify-center text-center gap-1.5 aspect-square active:scale-95 transition-transform">
+            <Star size={22} className="text-zinc-100" />
+            <span className="block font-medium text-[11px]">Acuerdos</span>
+          </button>
+
+          <button onClick={() => router.push('/checkin')} className="bg-[#5D6B5A] p-3 rounded-2xl flex flex-col items-center justify-center text-center gap-1.5 aspect-square active:scale-95 transition-transform relative">
+            <CalendarCheck size={22} className="text-zinc-100" />
+            {!checkinDoneThisWeek && <div className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full" />}
+            <span className="block font-medium text-[11px]">Chequeo</span>
           </button>
         </div>
-      </div>
 
+        {/* WIDGET GALLETA DE LA SUERTE */}
+        <div 
+          onClick={openCookie}
+          className={`rounded-3xl p-5 border flex gap-4 items-center transition-all duration-300 ${cookieOpened ? 'bg-[#1C1C1E] border-zinc-800' : 'bg-[#967454]/20 border-[#967454] cursor-pointer active:scale-[0.98]'}`}
+        >
+          <div className="text-5xl drop-shadow-lg">{cookieOpened ? '🥠✨' : '🥠'}</div>
+          <div className="flex-1">
+            <h3 className="text-[10px] tracking-widest uppercase text-[#F4D1D1] font-semibold mb-1">
+              {cookieOpened ? 'Mensaje del día' : 'Galleta de la suerte'}
+            </h3>
+            <p className={`text-sm font-serif italic mb-2 leading-snug ${cookieOpened ? 'text-zinc-200' : 'text-zinc-400'}`}>
+              "{cookieText}"
+            </p>
+          </div>
+        </div>
+
+        {/* LISTA DE CHATS TEMÁTICOS (Tu código adaptado al dark mode) */}
+        <div className="mt-6">
+          <h3 className="text-[11px] tracking-widest uppercase text-zinc-500 font-semibold mb-3 px-1">Nuestras Charlas</h3>
+          <div className="flex flex-col gap-2">
+            {TOPIC_CHATS.map((key) => {
+              const s = chatsSummary[key] || {};
+              const preview = formatPreviewText(s.lastMessage, currentUser, partnerName);
+              return (
+                <div key={key} onClick={() => openChat(key)} className="bg-[#1C1C1E] border border-zinc-800/60 p-3.5 rounded-2xl flex items-center gap-3 active:bg-zinc-800 transition-colors">
+                  <div className="w-12 h-12 bg-zinc-800 rounded-full flex items-center justify-center text-zinc-400">
+                    {(() => { const TopicIcon = CHAT_ICONS[key]; return TopicIcon ? <TopicIcon size={22} /> : null; })()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-center mb-0.5">
+                      <h4 className="text-sm font-medium text-zinc-100 truncate">{CHAT_TITLES[key]}</h4>
+                      {s.lastMessage && (
+                        <span className="text-[10px] text-zinc-500">{formatPreviewTime(s.lastMessage.created_at)}</span>
+                      )}
+                    </div>
+                    <div className="text-xs text-zinc-400 truncate flex items-center gap-1">
+                      {preview ? (
+                        <>
+                          <span className="font-semibold text-zinc-300">{preview.who}:</span> {preview.text}
+                          {s.lastMessage.sender === currentUser && !s.lastMessage.deleted && s.lastMessage.type !== 'timeout_start' && s.lastMessage.type !== 'timeout_end' && (
+                            <span className={`ml-1 ${s.lastMessage.read ? 'text-[#8A5A5C]' : s.lastMessage.delivered ? 'text-zinc-500' : 'text-zinc-600'}`}>
+                              {s.lastMessage.read || s.lastMessage.delivered ? <CheckCheck size={12} /> : <Check size={12} />}
+                            </span>
+                          )}
+                        </>
+                      ) : ('Aún no hay mensajes')}
+                    </div>
+                  </div>
+                  {s.unreadCount > 0 && (
+                    <div className="w-5 h-5 bg-[#8A5A5C] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                      {s.unreadCount}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+      </main>
+
+      {/* NAVEGACIÓN INFERIOR (Bottom Nav) */}
+      <nav className="fixed bottom-0 left-0 w-full bg-[#121212]/95 backdrop-blur-md border-t border-zinc-800/80 px-6 py-3 flex justify-between items-center z-40 pb-safe">
+        <button className="flex flex-col items-center gap-1 text-[#F4D1D1]">
+          <Home size={20} />
+          <span className="text-[9px] font-medium">Inicio</span>
+        </button>
+        <button onClick={() => router.push('/galeria')} className="flex flex-col items-center gap-1 text-zinc-500 hover:text-[#F4D1D1] transition-colors">
+          <ImageIcon size={20} />
+          <span className="text-[9px] font-medium">Fotos</span>
+        </button>
+        <button onClick={() => openChat(TOPIC_CHATS[0])} className="flex flex-col items-center gap-1 text-zinc-500 hover:text-[#F4D1D1] transition-colors relative">
+          <MessageCircle size={20} />
+          <span className="text-[9px] font-medium">Chat</span>
+        </button>
+        <button onClick={() => setShowMoodPicker(true)} className="flex flex-col items-center gap-1 text-zinc-500 hover:text-[#F4D1D1] transition-colors">
+          <Heart size={20} />
+          <span className="text-[9px] font-medium">Ánimo</span>
+        </button>
+      </nav>
+
+      {/* MODAL DE MOOD (Se mantiene tu HTML y clases originales intactas) */}
       {showMoodPicker && (
         <div className="modal-backdrop active" onClick={closeMoodPicker}>
           <div
             className="modal"
             onClick={(e) => e.stopPropagation()}
-            style={{
-              transform: `translateY(${dragY}px)`,
-              transition: dragStartY.current !== null ? 'none' : 'transform 0.25s ease',
-            }}
+            style={{ transform: `translateY(${dragY}px)`, transition: dragStartY.current !== null ? 'none' : 'transform 0.25s ease' }}
           >
-            <div
-              className="modal-handle-wrap"
-              onPointerDown={handleHandlePointerDown}
-            >
+            <div className="modal-handle-wrap" onPointerDown={handleHandlePointerDown}>
               <div className="modal-handle" />
             </div>
-
-            <h3>¿Cómo estás?</h3>
+            <h3 className="text-zinc-800">¿Cómo estás?</h3>
             <p className="mood-picker-hint">Elegí lo que mejor describe cómo te sentís ahora</p>
-
             <div className="mood-hero" style={{ '--mood-color': MOODS[myMood]?.color || '#988289' }}>
               <div key={myMood} className="mood-hero-icon">
                 {(() => { const MyMoodIcon = MOODS[myMood]?.Icon; return MyMoodIcon ? <MyMoodIcon size={28} strokeWidth={2.2} /> : null; })()}
@@ -377,7 +401,6 @@ export default function MenuPage() {
               <span key={`${myMood}-label`} className="mood-hero-label">{MOODS[myMood]?.text}</span>
               <span key={`${myMood}-underline`} className="mood-hero-underline" />
             </div>
-
             <div className="mood-strip">
               {Object.keys(MOODS).map((emoji) => {
                 const MoodIcon = MOODS[emoji].Icon;
