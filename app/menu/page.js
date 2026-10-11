@@ -203,13 +203,6 @@ export default function MenuPage() {
 
   function openChat(chatKey) { router.push(`/chat?chatKey=${chatKey}`); }
 
-  function getGreeting() {
-    const h = new Date().getHours();
-    if (h < 6) return 'Buenas noches';
-    if (h < 12) return 'Buenos días';
-    if (h < 20) return 'Buenas tardes';
-    return 'Buenas noches';
-  }
 
   if (!currentUser) return null;
 
@@ -233,13 +226,29 @@ export default function MenuPage() {
 {/* HEADER TECITO */}
       <header className="flex justify-between items-center px-6 pt-10 pb-4 relative z-10">
         
-        {/* Lado Izquierdo: Saludo y Título */}
-        <div>
-          <span className="text-[10px] uppercase tracking-widest text-zinc-400 font-semibold mb-1 block">
-            {getGreeting()}, {currentUser}
-          </span>
-          <h1 className="text-4xl font-serif italic text-[#F4D1D1]">Tecito ♡</h1>
-          <p className="text-xs text-zinc-400 mt-1">Tu lugar, siempre. ♡</p>
+        {/* Lado Izquierdo: Título */}
+        <div className="flex items-center">
+          <h1 
+            className="text-[40px] text-[#F4D1D1] tracking-wide"
+            style={{ fontFamily: 'cursive, "Brush Script MT"' }}
+          >
+            Tecito
+          </h1>
+          
+          {/* Corazón artesanal estilo dibujado a mano */}
+          <svg 
+            viewBox="0 0 200 200" 
+            width="30" 
+            height="30" 
+            className="ml-2 mt-1 -rotate-12 text-[#F4D1D1] opacity-90 drop-shadow-sm"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="12"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M100 170 C -20 100, 20 20, 100 60 C 180 20, 220 100, 100 170 Z" />
+          </svg>
         </div>
         
         {/* Lado Derecho: Perfil de Pareja Minimalista */}
@@ -255,15 +264,15 @@ export default function MenuPage() {
               alt={partnerName || "Pareja"} 
               className="w-full h-full object-cover"
             />
-            {/* Puntito verde de conexión chiquito abajo a la derecha */}
+            {/* Puntito verde de conexión */}
             <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-br-xl rounded-tl-md ${partnerOnline ? 'bg-green-500' : 'bg-zinc-600'}`} />
           </div>
 
-          {/* Ícono de Estado de Ánimo de la pareja (No emoji, ícono de Lucide) */}
+          {/* Ícono de Estado de Ánimo de la pareja */}
           <div style={{ color: MOODS[partnerMood]?.color || '#A1A1AA' }}>
             {(() => { 
               const PartnerMoodIcon = MOODS[partnerMood]?.Icon; 
-              return PartnerMoodIcon ? <PartnerMoodIcon size={24} strokeWidth={2} /> : null; 
+              return PartnerMoodIcon ? <PartnerMoodIcon size={24} strokeWidth={2.2} /> : null; 
             })()}
           </div>
 
