@@ -230,8 +230,10 @@ export default function MenuPage() {
         ))}
       </div>
 
-      {/* HEADER TECITO */}
+{/* HEADER TECITO */}
       <header className="flex justify-between items-center px-6 pt-10 pb-4 relative z-10">
+        
+        {/* Lado Izquierdo: Saludo y Título */}
         <div>
           <span className="text-[10px] uppercase tracking-widest text-zinc-400 font-semibold mb-1 block">
             {getGreeting()}, {currentUser}
@@ -240,20 +242,47 @@ export default function MenuPage() {
           <p className="text-xs text-zinc-400 mt-1">Tu lugar, siempre. ♡</p>
         </div>
         
-        <div className="flex flex-col items-center gap-2">
-          {/* Avatar con Estado */}
-          <div className="relative">
-            <div className="w-12 h-12 rounded-full border-2 border-[#F4D1D1] bg-zinc-800 flex items-center justify-center text-xl shadow-lg">
-              {MOODS[partnerMood]?.text || '☕'}
+        {/* Lado Derecho: Estados de Ánimo */}
+        <div className="flex items-center gap-3">
+          
+          {/* Estado de la Pareja */}
+          <div className="flex items-center gap-2 bg-[#1C1C1E] border border-zinc-800/80 p-2 rounded-2xl">
+            {/* Avatar con Estado Online/Offline */}
+            <div className="relative flex-shrink-0">
+              <div className="w-10 h-10 rounded-full border border-zinc-700 bg-zinc-800 overflow-hidden shadow-inner">
+                <img 
+                  src="https://images.unsplash.com/photo-1518199266791-5375a83190b7?q=80&w=200&auto=format&fit=crop" 
+                  alt={partnerName || "Pareja"} 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#121212] ${partnerOnline ? 'bg-green-500' : 'bg-zinc-600'}`} />
             </div>
-            <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-[#121212] ${partnerOnline ? 'bg-green-500' : 'bg-zinc-500'}`} />
+
+            {/* Info de la Pareja y su Mood */}
+            <div className="flex flex-col pr-1.5">
+              <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider leading-none">
+                {partnerName || "Ella"}
+              </span>
+              <div className="flex items-center gap-1 mt-0.5">
+                <span className="text-xs leading-none" role="img" aria-label="Partner Mood">
+                  {partnerMood}
+                </span>
+                <span className="text-[10px] text-[#F4D1D1] font-semibold truncate max-w-[70px]">
+                  {MOODS[partnerMood]?.text || "Neutral"}
+                </span>
+              </div>
+            </div>
           </div>
+
           {/* Botón para cambiar MI mood */}
           <button 
             onClick={() => setShowMoodPicker(true)}
-            className="bg-[#2A2A2A] text-xs px-3 py-1 rounded-full border border-zinc-700 flex items-center gap-1 active:scale-95"
+            className="bg-[#1C1C1E] text-[10px] font-semibold text-zinc-300 px-3 py-2 rounded-2xl border border-zinc-800/80 hover:bg-zinc-800 flex items-center gap-1.5 active:scale-95 transition-all h-[42px]"
           >
-            Yo: {MOODS[myMood]?.text || '😴'}
+            <span className="text-xs">{myMood}</span>
+            <span className="text-zinc-500 font-light">Yo:</span>
+            <span className="text-zinc-200">{MOODS[myMood]?.text || "Neutral"}</span>
           </button>
         </div>
       </header>
