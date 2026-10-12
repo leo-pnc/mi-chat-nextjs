@@ -61,6 +61,52 @@ export default function MenuPage() {
   const dragStartY = useRef(null);
   const [checkinDoneThisWeek, setCheckinDoneThisWeek] = useState(true);
 
+  // --- ESTADOS PARA EL CARRUSEL ---
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
+  const touchStartX = useRef(0);
+
+  const EVENT_COLORS = {
+    'Cita': '#F2879D',
+    'Viaje': '#A7C7E7',
+    'Cumpleaños': '#CDB4DB',
+    'Encuentro': '#A3B18A',
+    'Evento': '#FFC09F',
+    'Otro': '#A1A1AA'
+  };
+
+  // --- CARGAR PRÓXIMOS EVENTOS ---
+  useEffect(() => {
+    (async () => {
+      const today = new Date().toISOString().split('T')[0];
+      const { data } = await supabase
+        .from('calendar_events')
+        .select('*')
+        .gte('event_date', today)
+        .order('event_date', { ascending: true })
+        .limit(2); // Traemos los 2 más próximos
+      
+      if (data) setUpcomingEvents(data);
+    })();
+  }, []);
+
+  // Lógica para deslizar con el dedo (Swipe)
+  const handleTouchStart = (e: any) => { touchStartX.current = e.touches[0].clientX; };
+  const handleTouchEnd = (e: any) => {
+    const touchEndX = e.changedTouches[0].clientX;
+    const distance = touchStartX.current - touchEndX;
+    const totalSlides = Math.max(2, 1 + upcomingEvents.length); // Al menos 2 (Hoy + 1 Evento o Vacío)
+
+    if (distance > 50) setCurrentSlide((p) => (p + 1) % totalSlides); // Deslizar Izquierda
+    if (distance < -50) setCurrentSlide((p) => (p - 1 + totalSlides) % totalSlides); // Deslizar Derecha
+  };
+  
+  // Darle formato lindo a la fecha del evento (ej: "15 oct")
+  const formatEventDate = (dateStr: string) => {
+    const [y, m, d] = dateStr.split('-');
+    return new Date(parseInt(y), parseInt(m) - 1, parseInt(d)).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+  };
+
   // --- ESTADOS PARA LA GALLETA ---
   const [cookieText, setCookieText] = useState('Tocá para abrir tu galleta de hoy');
   const [cookieOpened, setCookieOpened] = useState(false);
@@ -290,69 +336,103 @@ export default function MenuPage() {
 
       <main className="px-6 space-y-6 relative z-10">
         
-        {/* HERO BANNER INTERACTIVO (Fiel a la referencia) */}
-        <div className="relative w-full h-52 rounded-[32px] overflow-hidden shadow-2xl mt-2 border border-zinc-800/50">
-          
+        {/* HERO BANNER CARRUSEL (Swipeable) */}
+        <div 
+          className="relative w-full h-52 rounded-[32px] overflow-hidden shadow-2xl mt-2 border border-zinc-800/50 transition-all"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
           {/* Fotografía de Fondo */}
-          <img 
-            src="/tazas-inicio.png" 
-            alt="Nuestros momentos" 
-            className="absolute inset-0 w-full h-full object-cover opacity-85"
-          />
-          {/* Capa de penumbra cálida */}
-          <div className="absolute inset-0 bg-gradient-to-tr from-black/80 via-black/35 to-transparent"></div>
+          <img src="/tazas-inicio.jpg" alt="Fondo" className="absolute inset-0 w-full h-full object-cover opacity-85" />
+          <div className="absolute inset-0 bg-gradient-to-tr from-black/85 via-black/40 to-transparent"></div>
 
-          {/* Contenido del Banner */}
+          {/* SLIDES */}
           <div className="absolute inset-0 p-6 flex flex-col justify-between z-10 select-none">
             
-            {/* Sección superior: Fecha */}
-            <div className="flex items-start gap-3">
-              <div className="text-[#F2879D] mt-1.5 flex-shrink-0">
-                {/* Ícono de Calendario en tono rosa */}
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                  <line x1="16" y1="2" x2="16" y2="6" />
-                  <line x1="8" y1="2" x2="8" y2="6" />
-                  <line x1="3" y1="10" x2="21" y2="10" />
-                  <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01" strokeWidth="2.5" />
-                </svg>
-              </div>
-              <div>
-                <span className="text-[11px] text-zinc-300 font-medium block leading-none">Hoy es...</span>
-                <span className={`text-2xl text-[#FDF2F2] leading-tight block mt-0.5 ${dancingFont.className}`}>
-                  {getFormattedDate()}
-                </span>
-              </div>
-            </div>
-
-            {/* Sección inferior: Tarjeta Glassmorphism y paginación */}
-            <div className="flex items-end justify-between">
-              
-              {/* Tarjeta translúcida estilo Glass */}
-              <div className="bg-[#1c1c1e]/45 backdrop-blur-md border border-white/10 px-4 py-3 rounded-[20px] max-w-[210px] flex items-center gap-3 shadow-lg">
-                <div className="text-[#F2879D] flex-shrink-0">
-                  {/* Pequeño corazón en el mensaje */}
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                  </svg>
+            {currentSlide === 0 ? (
+              /* SLIDE 0: HOY */
+              <div className="flex flex-col h-full justify-between animate-in fade-in duration-300">
+                <div className="flex items-start gap-3">
+                  <div className="text-[#F2879D] mt-1.5 flex-shrink-0">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                      <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+                      <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01" strokeWidth="2.5" />
+                    </svg>
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-zinc-300 font-medium block leading-none">Hoy es...</span>
+                    <span className={`text-2xl text-[#FDF2F2] leading-tight block mt-0.5 ${dancingFont.className}`}>
+                      {getFormattedDate()}
+                    </span>
+                  </div>
                 </div>
-                <p className={`text-[15px] text-[#FDF2F2] leading-tight font-medium ${dancingFont.className}`}>
-                  Nada mejor que compartir la vida contigo. ♡
-                </p>
+                <div className="bg-[#1c1c1e]/45 backdrop-blur-md border border-white/10 px-4 py-3 rounded-[20px] max-w-[210px] flex items-center gap-3 shadow-lg">
+                  <div className="text-[#F2879D] flex-shrink-0">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                    </svg>
+                  </div>
+                  <p className={`text-[15px] text-[#FDF2F2] leading-tight font-medium ${dancingFont.className}`}>
+                    Nada mejor que compartir la vida contigo. ♡
+                  </p>
+                </div>
               </div>
-
-              {/* Indicadores de página (Dots de paginación) */}
-              <div className="flex gap-1.5 pb-1">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#F2879D] shadow-sm"></span>
-                <span className="w-2.5 h-2.5 rounded-full bg-zinc-600/70"></span>
-                <span className="w-2.5 h-2.5 rounded-full bg-zinc-600/70"></span>
+            ) : (
+              /* SLIDES 1 y 2: PRÓXIMOS EVENTOS */
+              <div className="flex flex-col h-full justify-between animate-in slide-in-from-right-4 duration-300">
+                <div className="flex items-start gap-3">
+                  <div className="text-zinc-300 mt-1.5 flex-shrink-0">
+                    <Star size={20} />
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-zinc-300 font-medium block leading-none">Próximamente...</span>
+                    <span className={`text-2xl text-[#FDF2F2] leading-tight block mt-0.5 ${dancingFont.className}`}>
+                      Nuestra agenda
+                    </span>
+                  </div>
+                </div>
+                
+                {upcomingEvents[currentSlide - 1] ? (
+                  <div 
+                    className="bg-[#1c1c1e]/45 backdrop-blur-md border px-4 py-3 rounded-[20px] max-w-[220px] shadow-lg"
+                    style={{ borderColor: `${EVENT_COLORS[upcomingEvents[currentSlide - 1].event_type] || '#A1A1AA'}50` }}
+                  >
+                    <div 
+                      className="text-[10px] font-bold uppercase tracking-wider mb-0.5"
+                      style={{ color: EVENT_COLORS[upcomingEvents[currentSlide - 1].event_type] || '#A1A1AA' }}
+                    >
+                      {upcomingEvents[currentSlide - 1].event_type}
+                    </div>
+                    <div className="text-sm text-white font-medium leading-tight truncate">
+                      {upcomingEvents[currentSlide - 1].title}
+                    </div>
+                    <div className="text-[11px] text-zinc-300 mt-1 flex items-center gap-1">
+                      <CalendarCheck size={12} /> {formatEventDate(upcomingEvents[currentSlide - 1].event_date)}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-[#1c1c1e]/45 backdrop-blur-md border border-white/10 px-4 py-3 rounded-[20px] max-w-[210px] shadow-lg">
+                    <p className="text-xs text-zinc-200">Aún no hay eventos próximos. ¡Agendá uno!</p>
+                  </div>
+                )}
               </div>
+            )}
 
+            {/* Puntos de paginación abajo a la derecha */}
+            <div className="absolute bottom-5 right-6 flex gap-1.5 z-20">
+              {Array.from({ length: Math.max(2, 1 + upcomingEvents.length) }).map((_, idx) => (
+                <button 
+                  key={idx}
+                  onClick={() => setCurrentSlide(idx)}
+                  className={`h-2.5 rounded-full transition-all duration-300 ${currentSlide === idx ? 'w-5 bg-[#F2879D]' : 'w-2.5 bg-zinc-600/70 hover:bg-zinc-500'}`}
+                  aria-label={`Ir a la diapositiva ${idx + 1}`}
+                />
+              ))}
             </div>
 
           </div>
         </div>
-
         {/* GRILLA DE MÓDULOS */}
         <div className="grid grid-cols-4 gap-3">
           <button onClick={() => router.push('/galeria')} className="bg-[#6E5A63] p-3 rounded-2xl flex flex-col items-center justify-center text-center gap-1.5 aspect-square active:scale-95 transition-transform">
