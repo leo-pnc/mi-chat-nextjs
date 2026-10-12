@@ -63,7 +63,7 @@ export default function MenuPage() {
 
   // --- ESTADOS PARA EL CARRUSEL ---
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState([]);
   const touchStartX = useRef(0);
 
   const EVENT_COLORS = {
@@ -90,9 +90,9 @@ export default function MenuPage() {
     })();
   }, []);
 
-  // Lógica para deslizar con el dedo (Swipe)
-  const handleTouchStart = (e: any) => { touchStartX.current = e.touches[0].clientX; };
-  const handleTouchEnd = (e: any) => {
+// Lógica para deslizar con el dedo (Swipe)
+  const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
+  const handleTouchEnd = (e) => {
     const touchEndX = e.changedTouches[0].clientX;
     const distance = touchStartX.current - touchEndX;
     const totalSlides = Math.max(2, 1 + upcomingEvents.length); // Al menos 2 (Hoy + 1 Evento o Vacío)
@@ -102,7 +102,7 @@ export default function MenuPage() {
   };
   
   // Darle formato lindo a la fecha del evento (ej: "15 oct")
-  const formatEventDate = (dateStr: string) => {
+  const formatEventDate = (dateStr) => {
     const [y, m, d] = dateStr.split('-');
     return new Date(parseInt(y), parseInt(m) - 1, parseInt(d)).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
   };
