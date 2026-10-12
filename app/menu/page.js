@@ -343,7 +343,7 @@ export default function MenuPage() {
           onTouchEnd={handleTouchEnd}
         >
           {/* Fotografía de Fondo */}
-          <img src="/tazas-inicio.jpg" alt="Fondo" className="absolute inset-0 w-full h-full object-cover opacity-85" />
+          <img src="/tazas-inicio.png" alt="Fondo" className="absolute inset-0 w-full h-full object-cover opacity-85" />
           <div className="absolute inset-0 bg-gradient-to-tr from-black/85 via-black/40 to-transparent"></div>
 
           {/* SLIDES */}
