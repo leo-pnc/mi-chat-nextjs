@@ -521,21 +521,27 @@ export default function MenuPage() {
       {/* NAVEGACIÓN INFERIOR (Bottom Nav) */}
       <nav className="fixed bottom-0 left-0 w-full bg-[#121212]/95 backdrop-blur-md border-t border-zinc-800/80 px-6 py-3 flex justify-between items-center z-40 pb-safe">
         <button className="flex flex-col items-center gap-1 text-[#F4D1D1]">
-          <Home size={20} />
+          <Home size="{20}"/>
           <span className="text-[9px] font-medium">Inicio</span>
         </button>
         
         <button onClick={() => router.push('/galeria')} className="flex flex-col items-center gap-1 text-zinc-500 hover:text-[#F4D1D1] transition-colors">
-          <ImageIcon size={20} />
+          <ImageIcon size="{20}"/>
           <span className="text-[9px] font-medium">Fotos</span>
         </button>
         
         <button onClick={() => openChat(TOPIC_CHATS[0])} className="flex flex-col items-center gap-1 text-zinc-500 hover:text-[#F4D1D1] transition-colors relative">
-          <MessageCircle size={20} />
+          <MessageCircle size="{20}"/>
           <span className="text-[9px] font-medium">Chat</span>
         </button>
+
+        {/* NUEVO BOTÓN: CALENDARIO */}
+        <button onClick={() => router.push('/calendario')} className="flex flex-col items-center gap-1 text-zinc-500 hover:text-[#F4D1D1] transition-colors relative">
+          <CalendarDays size="{20}"/>
+          <span className="text-[9px] font-medium">Agenda</span>
+        </button>
         
-        {/* BOTÓN DE ÁNIMO (Dinámico según tu estado actual) */}
+        {/* BOTÓN DE ÁNIMO (Dinámico) */}
         <button 
           onClick={() => setShowMoodPicker(true)} 
           className="flex flex-col items-center gap-1 transition-colors active:scale-95"
@@ -543,8 +549,7 @@ export default function MenuPage() {
         >
           {(() => { 
             const MyMoodIcon = MOODS[myMood]?.Icon; 
-            // Si por algún motivo no carga tu ícono, muestra el corazón por defecto
-            return MyMoodIcon ? <MyMoodIcon size={20} strokeWidth={2.5} /> : <Heart size={20} />; 
+            return MyMoodIcon ? <MyMoodIcon size="{20}" strokeWidth="{2.5}"/> : <Heart size="{20}"/>; 
           })()}
           <span className="text-[9px] font-medium text-zinc-500">Ánimo</span>
         </button>
