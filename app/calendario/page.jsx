@@ -27,13 +27,9 @@ export default function CalendarioPage() {
   const [currentDate, setCurrentDate] = useState(new Date(2026, 9, 1)); // Octubre 2026 para coincidir con tu foto
   
   // Eventos de prueba basados en tu imagen
-  const dummyEvents = [
-    { id: 1, type: 'Cita', title: 'Cena en casa', date: '2026-10-04', time: '20:00', icon: Heart },
-    { id: 2, type: 'Viaje', title: 'Viaje a la costa', date: '2026-10-10', time: 'Todo el día', icon: Plane },
-    { id: 3, type: 'Encuentro', title: 'Ver peli', date: '2026-10-15', time: '22:00', icon: Film },
-    { id: 4, type: 'Cumpleaños', title: 'Cumple de Leo', date: '2026-10-18', time: 'Todo el día', icon: Gift },
-    { id: 5, type: 'Otro', title: 'Café y charla', date: '2026-10-24', time: '17:00', icon: Coffee },
-  ];
+// Borramos los eventos falsos y preparamos el estado real
+  const [events, setEvents] = useState([]);
+  const [showAddEvent, setShowAddEvent] = useState(false);
 
   // Lógica de fechas
   const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
@@ -182,7 +178,7 @@ export default function CalendarioPage() {
       </main>
 
       {/* FAB: BOTÓN FLOTANTE PARA AGREGAR EVENTO */}
-      <button className="fixed bottom-20 right-6 w-12 h-12 bg-[#F2879D] text-black rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(242,135,157,0.3)] z-40 active:scale-95 transition-transform">
+      <button onClick={() => setShowAddEvent(true)}className="fixed bottom-20 right-6 w-12 h-12 bg-[#F2879D] text-black rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(242,135,157,0.3)] z-40 active:scale-95 transition-transform">
         <Plus size={24} strokeWidth={2} />
       </button>
 
