@@ -89,7 +89,7 @@ export default function MenuPage() {
       // Los de hoy que ya pasaron de hora no cuentan como "próximos"
       const data = (rawEvents || [])
         .filter((e) => e.date > today || e.is_all_day || !e.time || e.time.slice(0, 5) >= timeNow)
-        .slice(0, 3);
+        .slice(0, 1);
       
       if (data) setUpcomingEvents(data);
     })();
