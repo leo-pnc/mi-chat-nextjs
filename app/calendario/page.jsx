@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, Bell, CalendarHeart, Heart, Plus, ArrowRight, Plane, Film, Gift, Coffee, Home as HomeIcon, Image as ImageIcon, MessageCircle, CalendarDays, X, Clock, Calendar, Sparkles, Tag } from "lucide-react";
 import { Dancing_Script } from 'next/font/google';
@@ -17,13 +17,13 @@ const EVENT_COLORS = {
 export default function CalendarioPage() {
   const router = useRouter();
   
-  // Estados Generales
   const [events, setEvents] = useState([]);
   const [currentDate, setCurrentDate] = useState(new Date(2026, 9, 1));
   const [showOnboarding, setShowOnboarding] = useState(false); 
 
-  // Estados del Bottom Sheet (Nuevo Evento)
+  // --- Estados del Bottom Sheet (Nuevo Evento) ---
   const [showAddEvent, setShowAddEvent] = useState(false);
+  const [isClosing, setIsClosing] = useState(false); // Para la animación de cierre suave
   const [newEventTitle, setNewEventTitle] = useState("");
   const [newEventDate, setNewEventDate] = useState("");
   const [newEventTime, setNewEventTime] = useState("");
@@ -31,7 +31,51 @@ export default function CalendarioPage() {
   const [newEventType, setNewEventType] = useState("Cita");
   const [isSurprise, setIsSurprise] = useState(false);
 
-  // Lógica de fechas (Calendario)
+  // --- Lógica de Swipe dinámico (Arrastrar para cerrar) ---
+  const [dragY, setDragY] = useState(0);
+  const dragStartY = useRef(null);
+
+  const handleTouchStart = (e) => {
+    dragStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchMove = (e) => {
+    if (dragStartY.current === null) return;
+    const currentY = e.touches[0].clientY;
+    const delta = currentY - dragStartY.current;
+    
+    // Solo permitimos arrastrar hacia abajo (delta positivo)
+    if (delta > 0) {
+      setDragY(delta);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (dragStartY.current === null) return;
+    
+    // Si arrastró más de 120 píxeles hacia abajo, cerramos el modal
+    if (dragY > 120) {
+      handleCloseAddEvent();
+    } else {
+      // Si fue un arrastre corto, vuelve a su posición original como un resorte
+      setDragY(0); 
+    }
+    dragStartY.current = null;
+  };
+
+  const handleCloseAddEvent = () => {
+    setIsClosing(true);
+    // Esperamos que termine la animación de salida para ocultarlo del DOM
+    setTimeout(() => {
+      setShowAddEvent(false);
+      setIsClosing(false);
+      setDragY(0);
+      setNewEventTitle(""); setNewEventDate(""); setNewEventTime("");
+      setIsAllDay(false); setNewEventType("Cita"); setIsSurprise(false);
+    }, 300); 
+  };
+
+  // --- Lógica del calendario ---
   const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
   const getFirstDayOfMonth = (year, month) => {
     let day = new Date(year, month, 1).getDay();
@@ -45,21 +89,17 @@ export default function CalendarioPage() {
   const nextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
   const prevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
 
-  // Función para cerrar y limpiar el formulario
-  const handleCloseAddEvent = () => {
-    setShowAddEvent(false);
-    setTimeout(() => {
-      setNewEventTitle(""); setNewEventDate(""); setNewEventTime("");
-      setIsAllDay(false); setNewEventType("Cita"); setIsSurprise(false);
-    }, 300); // Espera a que termine la animación para borrar los datos
-  };
-
   const handleSaveEvent = () => {
     if (!newEventTitle || !newEventDate || (!isAllDay && !newEventTime)) return;
     console.log("Guardando evento:", { newEventTitle, newEventDate, newEventTime, isAllDay, newEventType, isSurprise });
     handleCloseAddEvent();
-    // Fase futura: Conectar a Supabase
   };
+
+  // --- Cálculos dinámicos para el desenfoque al arrastrar ---
+  // A medida que dragY aumenta (baja la pantalla), la opacidad y el blur llegan a 0
+  const progress = Math.max(0, Math.min(dragY / 400, 1)); 
+  const overlayOpacity = isClosing ? 0 : 0.6 * (1 - progress);
+  const overlayBlur = isClosing ? 0 : 4 * (1 - progress);
 
   return (
     <div className="min-h-screen bg-[#121212] text-zinc-200 font-sans pb-28 relative">
@@ -114,12 +154,10 @@ export default function CalendarioPage() {
 
           <div className="grid grid-cols-7 gap-y-4 text-center">
             {Array.from({ length: firstDay }).map((_, i) => <div key={`empty-${i}`} />)}
-            
             {Array.from({ length: daysInMonth }).map((_, i) => {
               const day = i + 1;
               const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
               const dayEvents = events.filter(e => e.date === dateStr);
-              // Lógica de "Hoy" real:
               const isToday = new Date().toISOString().split('T')[0] === dateStr;
 
               return (
@@ -151,10 +189,18 @@ export default function CalendarioPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {/* Acá se mapearán los eventos cuando conectemos la DB */}
+            {/* Eventos se mapean acá */}
           </div>
         )}
       </main>
+
+      {/* FAB: BOTÓN FLOTANTE */}
+      <button 
+        onClick={() => setShowAddEvent(true)}
+        className="fixed bottom-20 right-6 w-14 h-14 bg-[#F2879D] text-black rounded-full flex items-center justify-center shadow-[0_4px_20px_rgba(242,135,157,0.4)] z-30 active:scale-95 transition-transform"
+      >
+        <Plus size={28} strokeWidth={2.5} />
+      </button>
 
       {/* NAVEGACIÓN INFERIOR */}
       <nav className="fixed bottom-0 left-0 w-full bg-[#121212]/95 backdrop-blur-md border-t border-zinc-800/80 px-6 py-3 flex justify-between items-center z-20 pb-safe">
@@ -176,36 +222,39 @@ export default function CalendarioPage() {
         </button>
       </nav>
 
-      {/* FAB: BOTÓN FLOTANTE */}
-      <button 
-        onClick={() => setShowAddEvent(true)}
-        className="fixed bottom-20 right-6 w-14 h-14 bg-[#F2879D] text-black rounded-full flex items-center justify-center shadow-[0_4px_20px_rgba(242,135,157,0.4)] z-30 active:scale-95 transition-transform"
-      >
-        <Plus size={28} strokeWidth={2.5} />
-      </button>
-
       {/* ========================================= */}
       {/* BOTTOM SHEET: NUEVO EVENTO                */}
       {/* ========================================= */}
-      {showAddEvent && (
+      {(showAddEvent || isClosing) && (
         <div className="fixed inset-0 z-50 flex flex-col justify-end">
           {/* Fondo difuminado interactivo (Cierra el modal al tocarlo) */}
           <div 
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
+            className="absolute inset-0 transition-all duration-300"
+            style={{ backgroundColor: `rgba(0,0,0,${overlayOpacity})`, backdropFilter: `blur(${overlayBlur}px)` }}
             onClick={handleCloseAddEvent}
           />
           
           {/* Hoja Inferior (75% de la pantalla) */}
-          <div className="relative bg-[#1C1C1E] w-full h-[75vh] rounded-t-[32px] border-t border-zinc-800/80 p-6 flex flex-col animate-in slide-in-from-bottom-full duration-300 shadow-2xl">
+          <div 
+            className="relative bg-[#1C1C1E] w-full h-[75vh] rounded-t-[32px] border-t border-zinc-800/80 p-6 flex flex-col shadow-2xl transition-transform duration-300"
+            style={{ transform: `translateY(${isClosing ? '100%' : dragY + 'px'})` }}
+          >
+            {/* Zona superior para detectar el Swipe (Arrastrar) */}
+            <div 
+              className="absolute top-0 left-0 right-0 h-16 flex items-start justify-center pt-3 touch-none z-10"
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
+              {/* Tirador visual (Handle) */}
+              <div className="w-12 h-1.5 bg-zinc-700 rounded-full shrink-0" />
+            </div>
             
-            {/* Tirador visual (Handle) */}
-            <div className="w-12 h-1.5 bg-zinc-700 rounded-full mx-auto mb-6 shrink-0" />
-            
-            <div className="flex justify-between items-center mb-6 shrink-0">
+            <div className="flex justify-between items-center mb-6 shrink-0 mt-4">
               <h3 className="text-xl font-medium text-white flex items-center gap-2">
                 Agendar plan <Sparkles size={20} className="text-[#F2879D]"/>
               </h3>
-              <button onClick={handleCloseAddEvent} className="text-zinc-500 hover:text-white p-1 bg-zinc-800/50 rounded-full">
+              <button onClick={handleCloseAddEvent} className="text-zinc-500 hover:text-white p-1 bg-zinc-800/50 rounded-full relative z-20">
                 <X size={20} />
               </button>
             </div>
@@ -224,27 +273,34 @@ export default function CalendarioPage() {
                 />
               </div>
 
-              {/* FECHA Y HORA (Obligatorios) */}
+              {/* FECHA Y HORA (Con Hitbox grande gracias al <label>) */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[11px] text-zinc-500 uppercase tracking-wider font-semibold flex items-center gap-1.5"><Calendar size={12}/> Fecha</label>
+                
+                <label className="space-y-1.5 flex flex-col cursor-pointer group">
+                  <span className="text-[11px] text-zinc-500 group-focus-within:text-[#F2879D] uppercase tracking-wider font-semibold flex items-center gap-1.5 transition-colors">
+                    <Calendar size={12}/> Fecha
+                  </span>
                   <input 
                     type="date" 
                     value={newEventDate}
                     onChange={(e) => setNewEventDate(e.target.value)}
-                    className="w-full bg-[#121212] border border-zinc-800 text-white rounded-xl p-3 focus:outline-none focus:border-zinc-600 [color-scheme:dark]"
+                    className="w-full bg-[#121212] border border-zinc-800 text-white rounded-xl p-3 focus:outline-none focus:border-[#F2879D] [color-scheme:dark] transition-colors cursor-pointer"
                   />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[11px] text-zinc-500 uppercase tracking-wider font-semibold flex items-center gap-1.5"><Clock size={12}/> Hora</label>
+                </label>
+
+                <label className="space-y-1.5 flex flex-col cursor-pointer group">
+                  <span className={`text-[11px] ${isAllDay ? 'text-zinc-700' : 'text-zinc-500 group-focus-within:text-[#F2879D]'} uppercase tracking-wider font-semibold flex items-center gap-1.5 transition-colors`}>
+                    <Clock size={12}/> Hora
+                  </span>
                   <input 
                     type="time" 
                     value={newEventTime}
                     onChange={(e) => setNewEventTime(e.target.value)}
                     disabled={isAllDay}
-                    className="w-full bg-[#121212] border border-zinc-800 text-white rounded-xl p-3 focus:outline-none focus:border-zinc-600 disabled:opacity-30 disabled:cursor-not-allowed [color-scheme:dark]"
+                    className="w-full bg-[#121212] border border-zinc-800 text-white rounded-xl p-3 focus:outline-none focus:border-[#F2879D] disabled:opacity-20 disabled:cursor-not-allowed [color-scheme:dark] transition-colors cursor-pointer"
                   />
-                </div>
+                </label>
+
               </div>
 
               {/* SWITCH TODO EL DÍA */}
@@ -275,7 +331,7 @@ export default function CalendarioPage() {
                 </div>
               </div>
 
-              {/* MODO SORPRESA (Opcional) */}
+              {/* MODO SORPRESA */}
               <div className="mt-4 flex items-center justify-between bg-gradient-to-r from-[#F2879D]/10 to-transparent border border-[#F2879D]/20 p-4 rounded-xl cursor-pointer" onClick={() => setIsSurprise(!isSurprise)}>
                 <div className="flex flex-col text-left">
                   <span className="text-sm font-semibold text-[#FDF2F2] flex items-center gap-1.5">
