@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, Bell, CalendarHeart, Heart, Plus, ArrowRight, Plane, Film, Gift, Coffee, Home as HomeIcon, Image as ImageIcon, MessageCircle, CalendarDays, X, Clock, Calendar, Sparkles, Tag, Timer } from "lucide-react";
 import { Dancing_Script } from 'next/font/google';
 
-// Asegurate de que esta ruta apunte bien a tu archivo de conexión
 import { supabase } from "@/lib/supabaseClient"; 
 
 const dancingFont = Dancing_Script({ subsets: ['latin'], weight: ['400', '600'] });
@@ -25,6 +24,10 @@ const EVENT_ICONS = {
   'Otro': Coffee
 };
 
+// Fotos de prueba (luego las cambias por las reales de ustedes)
+const MY_AVATAR = "https://images.unsplash.com/photo-1518199266791-5375a83190b7?q=80&w=100&auto=format&fit=crop";
+const PARTNER_AVATAR = "https://images.unsplash.com/photo-1476820897991-4b5cb38d2f50?q=80&w=100&auto=format&fit=crop";
+
 export default function CalendarioPage() {
   const router = useRouter();
   
@@ -32,7 +35,9 @@ export default function CalendarioPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date()); 
   
-  // --- NUEVO: ESTADO PARA FECHA SELECCIONADA ---
+  // Guardamos el ID del usuario actual para saber de quién es cada plan
+  const [currentUserId, setCurrentUserId] = useState(null);
+  
   const [selectedDateStr, setSelectedDateStr] = useState(null);
 
   const [showAddEvent, setShowAddEvent] = useState(false);
@@ -44,11 +49,9 @@ export default function CalendarioPage() {
   const [newEventType, setNewEventType] = useState("Cita");
   const [isSurprise, setIsSurprise] = useState(false);
 
-  // --- LÓGICA DE SWIPE VERTICAL (Modal de crear plan) ---
   const [dragY, setDragY] = useState(0);
   const dragStartY = useRef(null);
 
-  // --- NUEVO: LÓGICA DE SWIPE HORIZONTAL (Calendario) ---
   const calendarDragX = useRef(null);
   const handleCalTouchStart = (e) => { calendarDragX.current = e.touches[0].clientX; };
   const handleCalTouchMove = (e) => {
@@ -56,34 +59,28 @@ export default function CalendarioPage() {
     const currentX = e.touches[0].clientX;
     const diff = currentX - calendarDragX.current;
     
-    // Si arrastra más de 50px, cambiamos de mes y reseteamos
     if (diff > 50) { prevMonth(); calendarDragX.current = null; }
     else if (diff < -50) { nextMonth(); calendarDragX.current = null; }
   };
   const handleCalTouchEnd = () => { calendarDragX.current = null; };
 
-  // --- OBTENER FECHA ACTUAL (Local) ---
+  // --- OBTENER FECHA ACTUAL REAL ---
   const now = new Date();
   const tzOffset = now.getTimezoneOffset() * 60000;
   const localNow = new Date(Date.now() - tzOffset);
   const todayDateStr = localNow.toISOString().split('T')[0]; 
   const currentTimeStr = localNow.toISOString().split('T')[1].substring(0, 5); 
 
-  // --- CÁLCULO DE CUENTA REGRESIVA ---
   const getCountdownText = () => {
     if (!selectedDateStr) return null;
-    
-    const targetDate = new Date(selectedDateStr + 'T00:00:00'); // Inicio de ese día
-    const diff = targetDate - new Date(); // Diferencia en milisegundos
+    const targetDate = new Date(selectedDateStr + 'T00:00:00'); 
+    const diff = targetDate - new Date(); 
 
     if (diff < 0 && selectedDateStr !== todayDateStr) {
       const daysPassed = Math.floor(Math.abs(diff) / (1000 * 60 * 60 * 24));
       return `Pasó hace ${daysPassed} día${daysPassed > 1 ? 's' : ''}`;
     }
-
-    if (selectedDateStr === todayDateStr) {
-      return "¡Es hoy! ✨";
-    }
+    if (selectedDateStr === todayDateStr) return "¡Es hoy! ✨";
 
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
@@ -107,11 +104,16 @@ export default function CalendarioPage() {
   const canSave = missingFields.length === 0;
 
   useEffect(() => {
-    fetchEvents();
+    fetchInitialData();
   }, []);
 
-  const fetchEvents = async () => {
+  const fetchInitialData = async () => {
     try {
+      // 1. Buscamos quién es el usuario actual
+      const { data: authData } = await supabase.auth.getUser();
+      if (authData?.user) setCurrentUserId(authData.user.id);
+
+      // 2. Traemos todos los eventos
       const { data, error } = await supabase
         .from('calendar_events')
         .select('*')
@@ -121,7 +123,7 @@ export default function CalendarioPage() {
       if (error) throw error;
       if (data) setEvents(data);
     } catch (error) {
-      console.error("Error cargando eventos:", error.message);
+      console.error("Error cargando info:", error.message);
     } finally {
       setIsLoading(false);
     }
@@ -158,7 +160,6 @@ export default function CalendarioPage() {
     }
   };
 
-  // --- LÓGICA DE DÍAS Y MESES ---
   const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
   const getFirstDayOfMonth = (year, month) => {
     let day = new Date(year, month, 1).getDay();
@@ -172,21 +173,38 @@ export default function CalendarioPage() {
   const nextMonth = () => { setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)); setSelectedDateStr(null); };
   const prevMonth = () => { setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)); setSelectedDateStr(null); };
 
-  // --- FILTRO DE EVENTOS ---
-  // Si hay fecha seleccionada, mostramos solo esos. Si no, mostramos todos los planes de hoy en adelante.
+  // --- NUEVA LÓGICA DE FILTRO INTELIGENTE PARA "PRÓXIMOS EVENTOS" ---
+  const viewingMonth = currentDate.getMonth();
+  const viewingYear = currentDate.getFullYear();
+  const realMonth = localNow.getMonth();
+  const realYear = localNow.getFullYear();
+  const isViewingCurrentMonth = viewingMonth === realMonth && viewingYear === realYear;
+
+  // Calculamos la fecha límite (dentro de 30 días)
+  const future30Days = new Date(localNow.getTime() + 30 * 24 * 60 * 60 * 1000);
+  const future30DaysStr = future30Days.toISOString().split('T')[0];
+
   const displayedEvents = selectedDateStr 
-    ? events.filter(e => e.date === selectedDateStr)
-    : events.filter(e => e.date >= todayDateStr);
+    ? events.filter(e => e.date === selectedDateStr) // Si tocó un día, solo ese día
+    : events.filter(e => {
+        if (isViewingCurrentMonth) {
+          // Si estamos en el mes actual, mostramos de hoy a 30 días en el futuro
+          return e.date >= todayDateStr && e.date <= future30DaysStr;
+        } else {
+          // Si cambiamos de mes, mostramos TODOS los eventos de ese mes específico
+          const [eYear, eMonth] = e.date.split('-');
+          return parseInt(eYear) === viewingYear && parseInt(eMonth) === viewingMonth + 1;
+        }
+      });
 
   const handleDayClick = (dateStr) => {
     if (selectedDateStr === dateStr) {
-      setSelectedDateStr(null); // Desmarca si se toca la misma fecha
+      setSelectedDateStr(null); 
     } else {
-      setSelectedDateStr(dateStr); // Selecciona la nueva fecha
+      setSelectedDateStr(dateStr); 
     }
   };
 
-  // Botón cerrar modal
   const handleTouchStart = (e) => { dragStartY.current = e.touches[0].clientY; };
   const handleTouchMove = (e) => {
     if (dragStartY.current === null) return;
@@ -272,7 +290,6 @@ export default function CalendarioPage() {
               const isToday = todayDateStr === dateStr;
               const isSelected = selectedDateStr === dateStr;
 
-              // Estilos dinámicos para el circulito del día
               let dayStyles = "text-zinc-200 hover:bg-zinc-800/50"; 
               if (isToday && !isSelected) dayStyles = "bg-[#F2879D] text-black font-semibold shadow-md";
               if (isSelected) dayStyles = "bg-transparent border-2 border-[#F2879D] text-[#F2879D] font-bold shadow-[0_0_10px_rgba(242,135,157,0.3)]";
@@ -282,7 +299,6 @@ export default function CalendarioPage() {
                   <div className={`w-8 h-8 flex items-center justify-center rounded-full text-sm transition-all duration-200 ${dayStyles}`}>
                     {day}
                   </div>
-                  {/* Puntitos de colores */}
                   <div className="flex gap-0.5 absolute -bottom-1">
                     {dayEvents.slice(0, 3).map((ev, idx) => ( 
                       <span key={idx} className="w-1 h-1 rounded-full" style={{ backgroundColor: EVENT_COLORS[ev.type] || EVENT_COLORS['Otro'] }}></span>
@@ -298,11 +314,10 @@ export default function CalendarioPage() {
         <div className="flex justify-between items-end mb-4 px-1 flex-shrink-0">
           <div className="flex flex-col">
             <h3 className="text-sm text-zinc-200 font-medium tracking-wide flex items-center gap-2">
-              {selectedDateStr ? 'Planes del día' : 'Próximos eventos'}
+              {selectedDateStr ? 'Planes del día' : (isViewingCurrentMonth ? 'Próximos 30 días' : 'Planes del mes')}
               {selectedDateStr && <span className="text-[10px] bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-full">{selectedDateStr.split('-').reverse().join('/')}</span>}
             </h3>
             
-            {/* CUENTA REGRESIVA MAGNÉTICA */}
             {selectedDateStr && (
               <span className="text-[11px] text-[#F2879D] mt-1 font-medium flex items-center gap-1.5 animate-in fade-in slide-in-from-left-2 duration-300">
                 <Timer size={12}/> {getCountdownText()}
@@ -311,7 +326,7 @@ export default function CalendarioPage() {
           </div>
         </div>
 
-        {/* LISTA DE EVENTOS (Ahora scrollea perfectamente gracias al contenedor flex) */}
+        {/* LISTA DE EVENTOS */}
         {isLoading ? (
           <div className="text-center text-zinc-500 py-6 text-sm">Cargando nuestros planes...</div>
         ) : displayedEvents.length === 0 ? (
@@ -326,6 +341,10 @@ export default function CalendarioPage() {
               const EventIcon = EVENT_ICONS[ev.type] || EVENT_ICONS['Otro'];
               const dateObj = new Date(ev.date + 'T00:00:00'); 
               const displayDate = `${dateObj.getDate()} ${monthNames[dateObj.getMonth()].slice(0,3).toLowerCase()}`;
+              
+              // DETERMINAMOS QUÉ AVATAR MOSTRAR
+              const isMine = ev.creator === currentUserId;
+              const organizerAvatar = isMine ? MY_AVATAR : PARTNER_AVATAR;
 
               return (
                 <div key={ev.id} className="bg-[#1C1C1E] border border-zinc-800/80 rounded-2xl p-3 pl-0 flex items-center gap-3 shadow-sm relative overflow-hidden">
@@ -335,7 +354,7 @@ export default function CalendarioPage() {
                     <EventIcon size={22} strokeWidth={1.5} />
                   </div>
                   
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 pr-2">
                     <h4 className="text-sm font-medium text-white flex items-center gap-1.5 truncate">
                       {ev.is_surprise ? 'Sorpresa ✨' : ev.title}
                     </h4>
@@ -344,7 +363,16 @@ export default function CalendarioPage() {
                     </p>
                   </div>
                   
-                  <ChevronRight size={16} className="text-zinc-600 mr-3" />
+                  {/* FOTO DE PERFIL DEL CREADOR (Con borde combinando el color del evento) */}
+                  <div className="flex items-center justify-center mr-3 z-10">
+                    <div 
+                      className="w-8 h-8 rounded-full border-[1.5px] overflow-hidden shadow-sm"
+                      style={{ borderColor: EVENT_COLORS[ev.type] }}
+                    >
+                      <img src={organizerAvatar} alt="Creador del plan" className="w-full h-full object-cover" />
+                    </div>
+                  </div>
+                  
                 </div>
               );
             })}
@@ -354,7 +382,6 @@ export default function CalendarioPage() {
 
       <button 
         onClick={() => {
-          // Si tocan "+" y hay una fecha seleccionada, la precargamos en el formulario
           if (selectedDateStr) setNewEventDate(selectedDateStr);
           setShowAddEvent(true);
         }}
@@ -364,8 +391,8 @@ export default function CalendarioPage() {
       </button>
 
       {/* ========================================= */}
-      {/* NAVEGACIÓN INFERIOR Y BOTTOM SHEET (El resto del código se mantiene igual...) */}
-      {/* NAVEGACIÓN INFERIOR */}
+      {/* NAVEGACIÓN INFERIOR Y BOTTOM SHEET        */}
+      {/* ========================================= */}
       <nav className="fixed bottom-0 left-0 w-full bg-[#121212]/95 backdrop-blur-md border-t border-zinc-800/80 px-6 py-3 flex justify-between items-center z-20 pb-safe">
         <button onClick={() => router.push('/menu')} className="flex flex-col items-center gap-1 text-zinc-500 hover:text-[#F4D1D1] transition-colors">
           <HomeIcon size={20} />
