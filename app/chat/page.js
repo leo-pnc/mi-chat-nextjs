@@ -5,12 +5,15 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowLeft, Pause, CircleCheck, Star, Pencil, Trash2, X,
   Check, CheckCheck, NotebookPen, Mail, TriangleAlert, Send, Smile,
-  MessageCircle, Heart, HandHeart,
+  MessageCircle, Heart, HandHeart, CalendarDays,
 } from 'lucide-react';
+import { Dancing_Script } from 'next/font/google';
 import { supabase } from '@/lib/supabaseClient';
-import { MOODS, getPartnerName, CHAT_TITLES, CHAT_ICONS, CHAT_WALLPAPER_ICONS, REPAIR_MESSAGES } from '@/lib/config';
+import { MOODS, getPartnerName, CHAT_TITLES, CHAT_ICONS, CHAT_COLORS, CHAT_WALLPAPER_ICONS, REPAIR_MESSAGES } from '@/lib/config';
 import { findProfanity } from '@/lib/profanity';
 import { formatDayLabel, isSameDay } from '@/lib/dateFormat';
+
+const dancingFont = Dancing_Script({ subsets: ['latin'], weight: ['400', '600'] });
 
 const EMOJI_OPTIONS = [
   '😀', '😂', '❤️', '🥰', '😘', '😊', '😍', '😉',
@@ -599,16 +602,21 @@ function ChatInner() {
         <button className="icon-only-btn" onClick={() => router.push('/chats')} title="Volver">
           <ArrowLeft size={20} />
         </button>
-        {ChatIcon && (
-          <ChatIcon
-            ref={headerIconRef}
-            size={20}
-            strokeWidth={1.75}
-            className={`header-chat-icon${showChatIntro ? ' pending' : ''}`}
-          />
-        )}
+        <div className="header-avatar" style={{ color: CHAT_COLORS[chatKey] || '#F2879D' }}>
+          {ChatIcon && (
+            <ChatIcon
+              ref={headerIconRef}
+              size={20}
+              strokeWidth={1.75}
+              className={`header-chat-icon${showChatIntro ? ' pending' : ''}`}
+            />
+          )}
+        </div>
         <div className="header-title-block">
-          <div className="chat-title-header">{shortTitle}</div>
+          <div className="chat-title-header" style={{ fontFamily: dancingFont.style.fontFamily }}>
+            {shortTitle}
+            <Heart size={15} className="chat-title-heart" />
+          </div>
           <div className={partnerTyping ? 'typing' : (partnerOnline ? 'online' : 'offline')}>
             {partnerTyping ? (
               <span className="inline-icon-text">
@@ -633,11 +641,19 @@ function ChatInner() {
             )}
           </div>
         </div>
-        {!activeTimeout && (
-          <button className="timeout-header-btn" onClick={startTimeout} title="Activar tiempo fuera">
-            <Pause size={18} />
+        <div className="header-actions">
+          <button className="icon-only-btn" onClick={() => router.push('/agreements')} title="Acuerdos">
+            <Star size={18} />
           </button>
-        )}
+          <button className="icon-only-btn" onClick={() => router.push('/calendario')} title="Calendario">
+            <CalendarDays size={18} />
+          </button>
+          {!activeTimeout && (
+            <button className="timeout-header-btn" onClick={startTimeout} title="Activar tiempo fuera">
+              <Pause size={18} />
+            </button>
+          )}
+        </div>
       </header>
 
       {activeTimeout && (
@@ -781,6 +797,13 @@ function ChatInner() {
             </div>
           );
         })}
+        {partnerTyping && (
+          <div className="message-row them">
+            <div className="chat-message them typing-bubble">
+              <span className="typing-dots"><span></span><span></span><span></span></span>
+            </div>
+          </div>
+        )}
         <div ref={bottomRef} />
         </div>
       </div>

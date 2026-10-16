@@ -4,17 +4,10 @@ import { useRouter } from "next/navigation";
 import { Heart, Search, ChevronRight, Check, CheckCheck, Home as HomeIcon, Image as ImageIcon, MessageCircle, CalendarDays } from "lucide-react";
 import { Dancing_Script } from "next/font/google";
 import { supabase } from "@/lib/supabaseClient";
-import { MOODS, getPartnerName, TOPIC_CHATS, CHAT_TITLES, CHAT_ICONS, formatPreviewText } from "@/lib/config";
+import { MOODS, getPartnerName, TOPIC_CHATS, CHAT_TITLES, CHAT_ICONS, CHAT_COLORS, formatPreviewText } from "@/lib/config";
 import { formatPreviewTime } from "@/lib/dateFormat";
 
 const dancingFont = Dancing_Script({ subsets: ["latin"], weight: ["400", "600"] });
-
-// Color de identidad de cada chat (franja lateral + ícono)
-const CHAT_COLORS = {
-  discutir: "#F2879D",
-  consolar: "#95D2B3",
-  debatir: "#8294C4",
-};
 
 const PARTNER_AVATAR = "https://images.unsplash.com/photo-1518199266791-5375a83190b7?q=80&w=200&auto=format&fit=crop";
 
