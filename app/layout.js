@@ -21,6 +21,8 @@ export const viewport = {
   themeColor: '#0a0712',
   width: 'device-width',
   initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
   // Le pide al navegador que, cuando aparece el teclado, REDIMENSIONE el
   // viewport visible en vez de superponerlo y scrollear la página para
   // mostrar el campo enfocado (que es lo que hacía que el header "subiera"

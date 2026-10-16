@@ -327,7 +327,7 @@ export default function CalendarioPage() {
       </header>
 
       {/* CONTENIDO PRINCIPAL (Scrollable) */}
-      <main className="px-5 flex-1 overflow-y-auto pb-32 custom-scrollbar flex flex-col">
+      <main className={`px-5 flex-1 pb-32 custom-scrollbar flex flex-col ${!isLoading && displayedEvents.length === 0 ? 'overflow-y-hidden' : 'overflow-y-auto'}`}>
         
         {/* GRILLA DEL CALENDARIO CON ZONA SWIPEABLE */}
         <div 
