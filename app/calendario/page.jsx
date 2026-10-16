@@ -273,7 +273,7 @@ export default function CalendarioPage() {
                 />
               </div>
 
-              {/* FECHA Y HORA (Con Hitbox grande gracias al <label>) */}
+              {/* FECHA Y HORA (Con showPicker para abrir siempre el modal nativo) */}
               <div className="grid grid-cols-2 gap-4">
                 
                 <label className="space-y-1.5 flex flex-col cursor-pointer group">
@@ -283,6 +283,7 @@ export default function CalendarioPage() {
                   <input 
                     type="date" 
                     value={newEventDate}
+                    onClick={(e) => e.target.showPicker?.()} 
                     onChange={(e) => setNewEventDate(e.target.value)}
                     className="w-full bg-[#121212] border border-zinc-800 text-white rounded-xl p-3 focus:outline-none focus:border-[#F2879D] [color-scheme:dark] transition-colors cursor-pointer"
                   />
@@ -295,6 +296,7 @@ export default function CalendarioPage() {
                   <input 
                     type="time" 
                     value={newEventTime}
+                    onClick={(e) => e.target.showPicker?.()} 
                     onChange={(e) => setNewEventTime(e.target.value)}
                     disabled={isAllDay}
                     className="w-full bg-[#121212] border border-zinc-800 text-white rounded-xl p-3 focus:outline-none focus:border-[#F2879D] disabled:opacity-20 disabled:cursor-not-allowed [color-scheme:dark] transition-colors cursor-pointer"
