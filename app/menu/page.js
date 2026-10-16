@@ -65,23 +65,31 @@ export default function MenuPage() {
 
   const EVENT_COLORS = {
     'Cita': '#F2879D',
-    'Viaje': '#A7C7E7',
-    'Cumpleaños': '#CDB4DB',
-    'Encuentro': '#A3B18A',
-    'Evento': '#FFC09F',
-    'Otro': '#A1A1AA'
+    'Viaje': '#8294C4',
+    'Encuentro': '#F9D949',
+    'Cumpleaños': '#95D2B3',
+    'Otro': '#9D76C1'
   };
 
   // --- CARGAR PRÓXIMOS EVENTOS ---
   useEffect(() => {
     (async () => {
-      const today = new Date().toISOString().split('T')[0];
-      const { data } = await supabase
+      // Fecha y hora LOCAL (toISOString da UTC y de noche contaría el día siguiente)
+      const nowLocal = new Date();
+      const pad = (n) => String(n).padStart(2, '0');
+      const today = `${nowLocal.getFullYear()}-${pad(nowLocal.getMonth() + 1)}-${pad(nowLocal.getDate())}`;
+      const timeNow = `${pad(nowLocal.getHours())}:${pad(nowLocal.getMinutes())}`;
+      const { data: rawEvents } = await supabase
         .from('calendar_events')
         .select('*')
-        .gte('event_date', today)
-        .order('event_date', { ascending: true })
-        .limit(2); // Traemos los 2 más próximos
+        .gte('date', today)
+        .order('date', { ascending: true })
+        .order('time', { ascending: true })
+        .limit(10);
+      // Los de hoy que ya pasaron de hora no cuentan como "próximos"
+      const data = (rawEvents || [])
+        .filter((e) => e.date > today || e.is_all_day || !e.time || e.time.slice(0, 5) >= timeNow)
+        .slice(0, 3);
       
       if (data) setUpcomingEvents(data);
     })();
@@ -393,24 +401,25 @@ export default function MenuPage() {
                 {upcomingEvents[currentSlide - 1] ? (
                   <div 
                     className="bg-[#1c1c1e]/45 backdrop-blur-md border px-4 py-3 rounded-[20px] max-w-[220px] shadow-lg"
-                    style={{ borderColor: `${EVENT_COLORS[upcomingEvents[currentSlide - 1].event_type] || '#A1A1AA'}50` }}
+                    style={{ borderColor: `${EVENT_COLORS[upcomingEvents[currentSlide - 1].type] || '#A1A1AA'}50` }}
+                    onClick={() => router.push('/calendario')}
                   >
                     <div 
                       className="text-[10px] font-bold uppercase tracking-wider mb-0.5"
-                      style={{ color: EVENT_COLORS[upcomingEvents[currentSlide - 1].event_type] || '#A1A1AA' }}
+                      style={{ color: EVENT_COLORS[upcomingEvents[currentSlide - 1].type] || '#A1A1AA' }}
                     >
-                      {upcomingEvents[currentSlide - 1].event_type}
+                      {upcomingEvents[currentSlide - 1].type}
                     </div>
                     <div className="text-sm text-white font-medium leading-tight truncate">
-                      {upcomingEvents[currentSlide - 1].title}
+                      {upcomingEvents[currentSlide - 1].is_surprise ? 'Sorpresa ✨' : upcomingEvents[currentSlide - 1].title}
                     </div>
                     <div className="text-[11px] text-zinc-300 mt-1 flex items-center gap-1">
-                      <CalendarCheck size={12} /> {formatEventDate(upcomingEvents[currentSlide - 1].event_date)}
+                      <CalendarCheck size={12} /> {formatEventDate(upcomingEvents[currentSlide - 1].date)}{upcomingEvents[currentSlide - 1].is_all_day ? ' • Todo el día' : upcomingEvents[currentSlide - 1].time ? ` • ${upcomingEvents[currentSlide - 1].time.slice(0, 5)}` : ''}
                     </div>
                   </div>
                 ) : (
                   <div className="bg-[#1c1c1e]/45 backdrop-blur-md border border-white/10 px-4 py-3 rounded-[20px] max-w-[210px] shadow-lg">
-                    <p className="text-xs text-zinc-200">Aún no hay eventos próximos. ¡Agendá uno!</p>
+                    <p className="text-xs text-zinc-200 cursor-pointer" onClick={() => router.push('/calendario')}>Aún no hay eventos próximos. ¡Agendá uno!</p>
                   </div>
                 )}
               </div>
