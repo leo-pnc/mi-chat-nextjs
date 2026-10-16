@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, Bell, CalendarHeart, Heart, Plus, ArrowRight, Plane, Film, Gift, Coffee, Home as HomeIcon, Image as ImageIcon, MessageCircle, CalendarDays, X, Clock, Calendar, Sparkles, Tag, Timer, Trash2 } from "lucide-react";
 import { Dancing_Script } from 'next/font/google';
+import MoodNavButton from "@/app/MoodNavButton";
 
 import { supabase } from "@/lib/supabaseClient"; 
 
@@ -488,8 +489,9 @@ export default function CalendarioPage() {
         </button>
         <button className="flex flex-col items-center gap-1 text-[#F2879D]">
           <CalendarDays size={20} />
-          <span className="text-[9px] font-medium">Calendario</span>
+          <span className="text-[9px] font-medium">Agenda</span>
         </button>
+        <MoodNavButton />
       </nav>
 
       {/* BOTTOM SHEET: NUEVO EVENTO */}

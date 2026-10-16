@@ -6,6 +6,7 @@ import { Dancing_Script } from "next/font/google";
 import { supabase } from "@/lib/supabaseClient";
 import { MOODS, getPartnerName, TOPIC_CHATS, CHAT_TITLES, CHAT_ICONS, CHAT_COLORS, formatPreviewText } from "@/lib/config";
 import { formatPreviewTime } from "@/lib/dateFormat";
+import MoodNavButton from "@/app/MoodNavButton";
 
 const dancingFont = Dancing_Script({ subsets: ["latin"], weight: ["400", "600"] });
 
@@ -333,8 +334,9 @@ export default function ChatsPage() {
         </button>
         <button onClick={() => router.push("/calendario")} className="flex flex-col items-center gap-1 text-zinc-500 hover:text-[#F4D1D1] transition-colors">
           <CalendarDays size={20} />
-          <span className="text-[9px] font-medium">Calendario</span>
+          <span className="text-[9px] font-medium">Agenda</span>
         </button>
+        <MoodNavButton />
       </nav>
     </div>
   );
