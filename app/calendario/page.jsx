@@ -3,6 +3,8 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, Bell, CalendarHeart, Heart, Plus, ArrowRight, Plane, Film, Gift, Coffee, Home as HomeIcon, Image as ImageIcon, MessageCircle, CalendarDays, X, Clock, Calendar, Sparkles, Tag } from "lucide-react";
 import { Dancing_Script } from 'next/font/google';
+
+// Recordá asegurar la ruta a tu cliente de Supabase
 import { supabase } from "@/lib/supabaseClient"; 
 
 const dancingFont = Dancing_Script({ subsets: ['latin'], weight: ['400', '600'] });
@@ -15,7 +17,6 @@ const EVENT_COLORS = {
   'Otro': '#9D76C1' 
 };
 
-// Íconos para la lista según la categoría
 const EVENT_ICONS = {
   'Cita': Heart,
   'Viaje': Plane,
@@ -27,14 +28,10 @@ const EVENT_ICONS = {
 export default function CalendarioPage() {
   const router = useRouter();
   
-  // Estados de Base de Datos
   const [events, setEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentDate, setCurrentDate] = useState(new Date()); 
 
-  const [currentDate, setCurrentDate] = useState(new Date()); // Arranca en el mes actual
-  const [showOnboarding, setShowOnboarding] = useState(false); 
-
-  // Estados del Bottom Sheet (Nuevo Evento)
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [newEventTitle, setNewEventTitle] = useState("");
@@ -44,13 +41,34 @@ export default function CalendarioPage() {
   const [newEventType, setNewEventType] = useState("Cita");
   const [isSurprise, setIsSurprise] = useState(false);
 
-  // Lógica de Swipe dinámico
   const [dragY, setDragY] = useState(0);
   const dragStartY = useRef(null);
 
-  // ==========================================
-  // 1. OBTENER EVENTOS DE SUPABASE AL INICIAR
-  // ==========================================
+  // --- OBTENER FECHA Y HORA ACTUAL (Local) ---
+  const now = new Date();
+  const tzOffset = now.getTimezoneOffset() * 60000;
+  const localNow = new Date(Date.now() - tzOffset);
+  const todayDateStr = localNow.toISOString().split('T')[0]; // "YYYY-MM-DD"
+  const currentTimeStr = localNow.toISOString().split('T')[1].substring(0, 5); // "HH:mm"
+
+  // --- VALIDACIÓN DINÁMICA DE CAMPOS ---
+  const getMissingFields = () => {
+    let missing = [];
+    if (!newEventTitle.trim()) missing.push("Título");
+    if (!newEventDate) missing.push("Fecha");
+    if (!isAllDay && !newEventTime) missing.push("Hora");
+    
+    // Validación extra: Si es HOY, la hora no puede haber pasado
+    if (newEventDate === todayDateStr && !isAllDay && newEventTime && newEventTime < currentTimeStr) {
+      missing.push("Hora (debe ser a futuro)");
+    }
+    
+    return missing;
+  };
+
+  const missingFields = getMissingFields();
+  const canSave = missingFields.length === 0;
+
   useEffect(() => {
     fetchEvents();
   }, []);
@@ -60,11 +78,10 @@ export default function CalendarioPage() {
       const { data, error } = await supabase
         .from('calendar_events')
         .select('*')
-        .order('date', { ascending: true }) // Los ordenamos por fecha
+        .order('date', { ascending: true })
         .order('time', { ascending: true });
 
       if (error) throw error;
-      
       if (data) setEvents(data);
     } catch (error) {
       console.error("Error cargando eventos:", error.message);
@@ -73,14 +90,10 @@ export default function CalendarioPage() {
     }
   };
 
-  // ==========================================
-  // 2. GUARDAR NUEVO EVENTO EN SUPABASE
-  // ==========================================
   const handleSaveEvent = async () => {
-    if (!newEventTitle || !newEventDate || (!isAllDay && !newEventTime)) return;
+    if (!canSave) return; // Doble validación de seguridad
     
     try {
-      // 1. Le preguntamos a Supabase quién es el usuario actual logueado
       const { data: authData, error: authError } = await supabase.auth.getUser();
       
       if (authError || !authData.user) {
@@ -88,7 +101,6 @@ export default function CalendarioPage() {
         return;
       }
 
-      // 2. Armamos el evento sumando el ID de quién lo creó
       const eventToSave = {
         title: newEventTitle,
         date: newEventDate,
@@ -96,10 +108,9 @@ export default function CalendarioPage() {
         is_all_day: isAllDay,
         type: newEventType,
         is_surprise: isSurprise,
-        creator: authData.user.id // <--- ACÁ GUARDAMOS EL ID DEL USUARIO
+        creator: authData.user.id 
       };
 
-      // 3. Lo mandamos a la base de datos
       const { data, error } = await supabase
         .from('calendar_events')
         .insert([eventToSave])
@@ -117,7 +128,6 @@ export default function CalendarioPage() {
     }
   };
 
-  // --- Lógica del Bottom Sheet ---
   const handleTouchStart = (e) => { dragStartY.current = e.touches[0].clientY; };
   const handleTouchMove = (e) => {
     if (dragStartY.current === null) return;
@@ -143,7 +153,6 @@ export default function CalendarioPage() {
     }, 300); 
   };
 
-  // --- Lógica del calendario ---
   const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
   const getFirstDayOfMonth = (year, month) => {
     let day = new Date(year, month, 1).getDay();
@@ -164,7 +173,6 @@ export default function CalendarioPage() {
   return (
     <div className="min-h-screen bg-[#121212] text-zinc-200 font-sans pb-28 relative">
       
-      {/* HEADER */}
       <header className="px-6 pt-12 pb-6 bg-gradient-to-b from-[#2A1B1B] to-[#121212] sticky top-0 z-20">
         <div className="flex justify-between items-start">
           <div className="flex flex-col">
@@ -185,7 +193,6 @@ export default function CalendarioPage() {
       </header>
 
       <main className="px-5">
-        {/* GRILLA DEL CALENDARIO */}
         <div className="bg-[#1C1C1E] border border-zinc-800/80 rounded-[28px] p-5 mb-8 shadow-xl">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-lg font-medium text-white ml-1">
@@ -210,9 +217,7 @@ export default function CalendarioPage() {
               const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
               const dayEvents = events.filter(e => e.date === dateStr);
               
-              // Ajuste para la zona horaria local de Argentina (evita desfasajes)
-              const todayStr = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
-              const isToday = todayStr === dateStr;
+              const isToday = todayDateStr === dateStr;
 
               return (
                 <div key={day} className="flex flex-col items-center relative h-8">
@@ -220,7 +225,7 @@ export default function CalendarioPage() {
                     {day}
                   </div>
                   <div className="flex gap-0.5 absolute -bottom-1">
-                    {dayEvents.slice(0, 3).map((ev, idx) => ( // Máximo 3 puntitos para no desbordar
+                    {dayEvents.slice(0, 3).map((ev, idx) => ( 
                       <span key={idx} className="w-1 h-1 rounded-full" style={{ backgroundColor: EVENT_COLORS[ev.type] || EVENT_COLORS['Otro'] }}></span>
                     ))}
                   </div>
@@ -230,7 +235,6 @@ export default function CalendarioPage() {
           </div>
         </div>
 
-        {/* PRÓXIMOS EVENTOS */}
         <div className="flex justify-between items-end mb-4 px-1">
           <h3 className="text-sm text-zinc-200 font-medium tracking-wide">Próximos eventos</h3>
         </div>
@@ -247,20 +251,17 @@ export default function CalendarioPage() {
           <div className="space-y-3">
             {events.map((ev) => {
               const EventIcon = EVENT_ICONS[ev.type] || EVENT_ICONS['Otro'];
-              const dateObj = new Date(ev.date + 'T00:00:00'); // Evita desfase horario
+              const dateObj = new Date(ev.date + 'T00:00:00'); 
               const displayDate = `${dateObj.getDate()} ${monthNames[dateObj.getMonth()].slice(0,3).toLowerCase()}`;
 
               return (
                 <div key={ev.id} className="bg-[#1C1C1E] border border-zinc-800/80 rounded-2xl p-3 pl-0 flex items-center gap-3 shadow-sm relative overflow-hidden">
-                  {/* Borde lateral de color */}
                   <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ backgroundColor: EVENT_COLORS[ev.type] }}></div>
                   
-                  {/* Ícono */}
                   <div className="w-12 h-12 rounded-xl ml-4 flex items-center justify-center shadow-inner" style={{ backgroundColor: `${EVENT_COLORS[ev.type]}20`, color: EVENT_COLORS[ev.type] }}>
                     <EventIcon size={22} strokeWidth={1.5} />
                   </div>
                   
-                  {/* Info */}
                   <div className="flex-1 min-w-0">
                     <h4 className="text-sm font-medium text-white flex items-center gap-1.5 truncate">
                       {ev.is_surprise ? 'Sorpresa ✨' : ev.title}
@@ -278,7 +279,6 @@ export default function CalendarioPage() {
         )}
       </main>
 
-      {/* FAB: BOTÓN FLOTANTE */}
       <button 
         onClick={() => setShowAddEvent(true)}
         className="fixed bottom-20 right-6 w-14 h-14 bg-[#F2879D] text-black rounded-full flex items-center justify-center shadow-[0_4px_20px_rgba(242,135,157,0.4)] z-30 active:scale-95 transition-transform"
@@ -327,7 +327,9 @@ export default function CalendarioPage() {
                   placeholder="Ej: Cena en nuestro lugar..." 
                   value={newEventTitle}
                   onChange={(e) => setNewEventTitle(e.target.value)}
-                  className="w-full bg-transparent border-b border-zinc-700 focus:border-[#F2879D] text-white text-xl p-2 pb-3 focus:outline-none transition-colors placeholder:text-zinc-600"
+                  className={`w-full bg-transparent border-b text-white text-xl p-2 pb-3 focus:outline-none transition-colors placeholder:text-zinc-600
+                    ${!newEventTitle && missingFields.includes("Título") && !canSave && showAddEvent ? 'border-[#F2879D]/50' : 'border-zinc-700 focus:border-[#F2879D]'}
+                  `}
                 />
               </div>
 
@@ -339,6 +341,7 @@ export default function CalendarioPage() {
                   <input 
                     type="date" 
                     value={newEventDate}
+                    min={todayDateStr} // Bloquea fechas en el pasado en el selector nativo
                     onClick={(e) => e.target.showPicker?.()} 
                     onChange={(e) => setNewEventDate(e.target.value)}
                     className="w-full bg-[#121212] border border-zinc-800 text-white rounded-xl p-3 focus:outline-none focus:border-[#F2879D] [color-scheme:dark] transition-colors cursor-pointer"
@@ -400,11 +403,18 @@ export default function CalendarioPage() {
 
             </div>
 
-            <div className="pt-4 shrink-0">
+            <div className="pt-4 shrink-0 flex flex-col items-center">
+              {/* FEEDBACK DE CAMPOS FALTANTES */}
+              {!canSave && (
+                <span className="text-[11px] text-[#F2879D] font-medium mb-3">
+                  Completar: {missingFields.join(" • ")}
+                </span>
+              )}
+              
               <button 
                 onClick={handleSaveEvent}
-                disabled={!newEventTitle || !newEventDate || (!isAllDay && !newEventTime)}
-                className="w-full bg-[#F2879D] text-black font-semibold rounded-xl py-4 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] transition-all shadow-lg shadow-[#F2879D]/20"
+                disabled={!canSave}
+                className="w-full bg-[#F2879D] text-black font-semibold rounded-xl py-4 flex items-center justify-center gap-2 disabled:opacity-40 disabled:grayscale-[0.5] disabled:cursor-not-allowed active:scale-[0.98] transition-all shadow-lg shadow-[#F2879D]/20"
               >
                 Crear plan <CalendarHeart size={18} />
               </button>
