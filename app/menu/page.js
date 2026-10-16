@@ -11,6 +11,7 @@ import { MOODS, getPartnerName, TOPIC_CHATS, CHAT_TITLES, CHAT_ICONS, getWeekSta
 import { formatPreviewTime } from '@/lib/dateFormat';
 import { enablePushNotifications } from '@/lib/push';
 import { Dancing_Script } from 'next/font/google';
+import { Home, ImageIcon, MessageCircle, Heart, CalendarDays } from 'lucide-react';
 
 const dancingFont = Dancing_Script({ 
   subsets: ['latin'], 
