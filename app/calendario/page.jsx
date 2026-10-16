@@ -25,7 +25,7 @@ export default function CalendarioPage() {
       {/* HEADER SIMPLE */}
       <header className="flex items-center justify-between px-6 pt-10 pb-4 bg-[#121212]/95 backdrop-blur-md sticky top-0 z-30 border-b border-zinc-800/80">
         <button onClick={() => router.back()} className="text-zinc-400 hover:text-white p-2 -ml-2 rounded-full">
-          <ChevronLeft size="{24}"/>
+          <ChevronLeft size={24} />
         </button>
         <h1 className="text-lg font-medium tracking-wide">Nuestra Agenda</h1>
         <div className="w-8"></div> {/* Espaciador invisible para centrar el título */}
@@ -46,7 +46,7 @@ export default function CalendarioPage() {
 
             <div className="flex flex-col items-center text-center mb-6 relative z-10">
               <div className="w-16 h-16 bg-[#F2879D]/10 text-[#F2879D] rounded-full flex items-center justify-center mb-4">
-                <CalendarHeart size="{32}" strokeWidth="{1.5}"/>
+                <CalendarHeart size={32} strokeWidth={1.5} />
               </div>
               <h2 className="text-2xl text-[#FDF2F2] font-semibold mb-2" style={{ fontFamily: 'cursive, "Brush Script MT"' }}>
                 Agendá tu aniversario!
@@ -70,7 +70,7 @@ export default function CalendarioPage() {
               <div className="flex items-center justify-between bg-[#121212] border border-zinc-800 p-3 rounded-xl cursor-pointer" onClick={() => setWantsNotification(!wantsNotification)}>
                 <div className="flex items-center gap-3">
                   <div className={`p-2 rounded-full ${wantsNotification ? 'bg-[#F2879D]/20 text-[#F2879D]' : 'bg-zinc-800 text-zinc-500'}`}>
-                    <Bell size="{18}"/>
+                    <Bell size={18} />
                   </div>
                   <div className="flex flex-col text-left">
                     <span className="text-sm font-medium text-zinc-200">Recordatorio mágico</span>
