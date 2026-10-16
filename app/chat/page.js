@@ -86,7 +86,7 @@ function ChatInner() {
         return;
       }
       if (!chatKey) {
-        router.push('/menu');
+        router.push('/chats');
         return;
       }
       setCurrentUser(session.user.app_metadata?.display_name || null);
@@ -596,7 +596,7 @@ function ChatInner() {
         </div>
       )}
       <header className="chat-header">
-        <button className="icon-only-btn" onClick={() => router.push('/menu')} title="Volver">
+        <button className="icon-only-btn" onClick={() => router.push('/chats')} title="Volver">
           <ArrowLeft size={20} />
         </button>
         {ChatIcon && (

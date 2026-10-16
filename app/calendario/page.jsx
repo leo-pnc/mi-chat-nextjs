@@ -482,7 +482,7 @@ export default function CalendarioPage() {
           <ImageIcon size={20} />
           <span className="text-[9px] font-medium">Fotos</span>
         </button>
-        <button className="flex flex-col items-center gap-1 text-zinc-500 hover:text-[#F4D1D1] transition-colors relative">
+        <button onClick={() => router.push('/chats')} className="flex flex-col items-center gap-1 text-zinc-500 hover:text-[#F4D1D1] transition-colors relative">
           <MessageCircle size={20} />
           <span className="text-[9px] font-medium">Chat</span>
         </button>

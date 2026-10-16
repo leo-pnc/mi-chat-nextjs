@@ -437,7 +437,7 @@ export default function MenuPage() {
             <span className="block font-medium text-[11px]">Fotos</span>
           </button>
           
-          <button onClick={() => openChat(TOPIC_CHATS[0])} className="bg-[#8A5A5C] p-3 rounded-2xl flex flex-col items-center justify-center text-center gap-1.5 aspect-square active:scale-95 transition-transform">
+          <button onClick={() => router.push('/chats')} className="bg-[#8A5A5C] p-3 rounded-2xl flex flex-col items-center justify-center text-center gap-1.5 aspect-square active:scale-95 transition-transform">
             <MessageCircle size={22} className="text-zinc-100" />
             <span className="block font-medium text-[11px]">Chat</span>
           </button>
@@ -527,7 +527,7 @@ export default function MenuPage() {
           <span className="text-[9px] font-medium">Fotos</span>
         </button>
         
-        <button onClick={() => openChat(TOPIC_CHATS[0])} className="flex flex-col items-center gap-1 text-zinc-500 hover:text-[#F4D1D1] transition-colors relative">
+        <button onClick={() => router.push('/chats')} className="flex flex-col items-center gap-1 text-zinc-500 hover:text-[#F4D1D1] transition-colors relative">
           <MessageCircle size={20} />
           <span className="text-[9px] font-medium">Chat</span>
         </button>
