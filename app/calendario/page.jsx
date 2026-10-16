@@ -1,7 +1,7 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, Bell, CalendarHeart, Heart, Plus, ArrowRight, Plane, Film, Gift, Coffee, Home as HomeIcon, Image as ImageIcon, MessageCircle, CalendarDays, X, Clock, Calendar, Sparkles, Tag, Timer } from "lucide-react";
+import { ChevronLeft, ChevronRight, Bell, CalendarHeart, Heart, Plus, ArrowRight, Plane, Film, Gift, Coffee, Home as HomeIcon, Image as ImageIcon, MessageCircle, CalendarDays, X, Clock, Calendar, Sparkles, Tag, Timer, Trash2 } from "lucide-react";
 import { Dancing_Script } from 'next/font/google';
 
 import { supabase } from "@/lib/supabaseClient"; 
@@ -28,11 +28,71 @@ const EVENT_ICONS = {
 const MY_AVATAR = "https://images.unsplash.com/photo-1518199266791-5375a83190b7?q=80&w=100&auto=format&fit=crop";
 const PARTNER_AVATAR = "https://images.unsplash.com/photo-1476820897991-4b5cb38d2f50?q=80&w=100&auto=format&fit=crop";
 
+// Tarjeta deslizable: al arrastrar hacia la izquierda aparece el botón de borrar
+function SwipeableEvent({ isOpen, onOpen, onClose, onDelete, children }) {
+  const REVEAL = 80;
+  const [offset, setOffset] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const start = useRef(null);
+  const axis = useRef(null);
+  const base = isOpen ? -REVEAL : 0;
+
+  const handleTouchStart = (e) => {
+    start.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    axis.current = null;
+  };
+  const handleTouchMove = (e) => {
+    if (!start.current) return;
+    const dx = e.touches[0].clientX - start.current.x;
+    const dy = e.touches[0].clientY - start.current.y;
+    if (axis.current === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
+      axis.current = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+    }
+    if (axis.current !== 'x') return;
+    setDragging(true);
+    setOffset(Math.max(-REVEAL - 20, Math.min(0, base + dx)));
+  };
+  const handleTouchEnd = () => {
+    if (axis.current === 'x') {
+      if (offset < -REVEAL / 2) onOpen();
+      else onClose();
+    }
+    setDragging(false);
+    start.current = null;
+    axis.current = null;
+  };
+
+  const translateX = dragging ? offset : base;
+
+  return (
+    <div className="relative rounded-2xl overflow-hidden">
+      <button
+        onClick={onDelete}
+        aria-label="Borrar plan"
+        className="absolute inset-y-0 right-0 bg-red-500 flex items-center justify-center text-white transition-opacity duration-200"
+        style={{ width: REVEAL, opacity: dragging || isOpen ? 1 : 0, pointerEvents: isOpen ? 'auto' : 'none' }}
+      >
+        <Trash2 size={22} />
+      </button>
+      <div
+        className="relative touch-pan-y"
+        style={{ transform: `translateX(${translateX}px)`, transition: dragging ? 'none' : 'transform 0.25s ease' }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export default function CalendarioPage() {
   const router = useRouter();
   
   const [events, setEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [openSwipeId, setOpenSwipeId] = useState(null);
   const [currentDate, setCurrentDate] = useState(new Date()); 
   
   // Guardamos el ID del usuario actual para saber de quién es cada plan
@@ -157,6 +217,18 @@ export default function CalendarioPage() {
     } catch (error) {
       console.error("Error guardando el plan:", error.message);
       alert("Hubo un error al guardar el plan. Revisa la consola.");
+    }
+  };
+
+  const handleDeleteEvent = async (id) => {
+    try {
+      const { error } = await supabase.from('calendar_events').delete().eq('id', id);
+      if (error) throw error;
+      setEvents((prev) => prev.filter((e) => e.id !== id));
+      setOpenSwipeId(null);
+    } catch (error) {
+      console.error("Error borrando el plan:", error.message);
+      alert("No se pudo borrar el plan. Revisa la consola.");
     }
   };
 
@@ -347,7 +419,14 @@ export default function CalendarioPage() {
               const organizerAvatar = isMine ? MY_AVATAR : PARTNER_AVATAR;
 
               return (
-                <div key={ev.id} className="bg-[#1C1C1E] border border-zinc-800/80 rounded-2xl p-3 pl-0 flex items-center gap-3 shadow-sm relative overflow-hidden">
+                <SwipeableEvent
+                  key={ev.id}
+                  isOpen={openSwipeId === ev.id}
+                  onOpen={() => setOpenSwipeId(ev.id)}
+                  onClose={() => setOpenSwipeId(null)}
+                  onDelete={() => handleDeleteEvent(ev.id)}
+                >
+                <div className="bg-[#1C1C1E] border border-zinc-800/80 rounded-2xl p-3 pl-0 flex items-center gap-3 shadow-sm relative overflow-hidden">
                   <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ backgroundColor: EVENT_COLORS[ev.type] }}></div>
                   
                   <div className="w-12 h-12 rounded-xl ml-4 flex items-center justify-center shadow-inner" style={{ backgroundColor: `${EVENT_COLORS[ev.type]}20`, color: EVENT_COLORS[ev.type] }}>
@@ -374,6 +453,7 @@ export default function CalendarioPage() {
                   </div>
                   
                 </div>
+                </SwipeableEvent>
               );
             })}
           </div>
