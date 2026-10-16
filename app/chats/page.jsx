@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Heart, Search, ChevronRight, Check, CheckCheck, Home as HomeIcon, Image as ImageIcon, MessageCircle, CalendarDays } from "lucide-react";
+import { Heart, Search, ChevronRight, Check, CheckCheck, Star, X, Home as HomeIcon, Image as ImageIcon, MessageCircle, CalendarDays } from "lucide-react";
 import { Dancing_Script } from "next/font/google";
 import { supabase } from "@/lib/supabaseClient";
 import { MOODS, getPartnerName, TOPIC_CHATS, CHAT_TITLES, CHAT_ICONS, CHAT_COLORS, formatPreviewText } from "@/lib/config";
@@ -11,6 +11,17 @@ const dancingFont = Dancing_Script({ subsets: ["latin"], weight: ["400", "600"] 
 
 const PARTNER_AVATAR = "https://images.unsplash.com/photo-1518199266791-5375a83190b7?q=80&w=200&auto=format&fit=crop";
 
+// Resalta en rosa las coincidencias de la búsqueda dentro del texto del mensaje
+function highlight(text, q) {
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const parts = text.split(new RegExp(`(${escaped})`, "gi"));
+  return parts.map((p, i) =>
+    p.toLowerCase() === q.toLowerCase()
+      ? <mark key={i} className="bg-[#F2879D]/25 text-[#F2879D] rounded px-0.5">{p}</mark>
+      : <span key={i}>{p}</span>
+  );
+}
+
 export default function ChatsPage() {
   const router = useRouter();
 
@@ -19,6 +30,8 @@ export default function ChatsPage() {
   const [partnerOnline, setPartnerOnline] = useState(false);
   const [chatsSummary, setChatsSummary] = useState({});
   const [search, setSearch] = useState("");
+  const [results, setResults] = useState([]);
+  const [searching, setSearching] = useState(false);
 
   const partnerName = currentUser ? getPartnerName(currentUser) : null;
 
@@ -87,11 +100,41 @@ export default function ChatsPage() {
     };
   }, [currentUser, partnerName, loadChatsSummary]);
 
+  // Búsqueda de mensajes en los tres chats (con una pequeña espera mientras se escribe)
+  useEffect(() => {
+    const q = search.trim();
+    if (q.length < 2) {
+      setResults([]);
+      setSearching(false);
+      return;
+    }
+    let cancelled = false;
+    setSearching(true);
+    const t = setTimeout(async () => {
+      const safe = q.replace(/[%_,()]/g, " ");
+      const { data, error } = await supabase
+        .from("messages")
+        .select("*")
+        .in("chat_id", TOPIC_CHATS)
+        .ilike("text", `%${safe}%`)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (cancelled) return;
+      setResults(
+        error ? [] : (data || []).filter((m) => !m.deleted && m.type !== "timeout_start" && m.type !== "timeout_end")
+      );
+      setSearching(false);
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [search]);
+
   const openChat = (key) => router.push(`/chat?chatKey=${key}`);
 
-  const filteredChats = TOPIC_CHATS.filter((key) =>
-    CHAT_TITLES[key].toLowerCase().includes(search.trim().toLowerCase())
-  );
+  const query = search.trim();
+  const isSearching = query.length > 0;
 
   if (!currentUser) return null;
 
@@ -111,13 +154,23 @@ export default function ChatsPage() {
             </p>
           </div>
 
-          {/* Foto de la pareja con borde del color de su ánimo */}
+          {/* Mensajes destacados + foto de la pareja */}
+          <div className="flex items-center gap-3">
+          <button
+            onClick={() => router.push("/agreements")}
+            aria-label="Mensajes destacados"
+            title="Mensajes destacados"
+            className="w-11 h-11 rounded-full bg-[#1C1C1E] border border-zinc-800/80 flex items-center justify-center text-[#F2879D] active:scale-90 transition-transform"
+          >
+            <Star size={20} />
+          </button>
           <div
             className="w-12 h-12 rounded-[14px] border-[1.5px] flex-shrink-0 overflow-hidden shadow-sm relative transition-colors duration-300"
             style={{ borderColor: MOODS[partnerMood]?.color || "#52525B" }}
           >
             <img src={PARTNER_AVATAR} alt={partnerName || "Pareja"} className="w-full h-full object-cover" />
             <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-br-[12px] rounded-tl-lg border-2 border-[#121212] ${partnerOnline ? "bg-green-500" : "bg-zinc-600"}`} />
+          </div>
           </div>
         </div>
       </header>
@@ -132,18 +185,69 @@ export default function ChatsPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar chats..."
+            placeholder="Buscar mensajes..."
             className="flex-1 bg-transparent text-sm text-white placeholder:text-zinc-500 focus:outline-none"
           />
+          {search && (
+            <button onClick={() => setSearch("")} aria-label="Borrar búsqueda" className="text-zinc-500 active:scale-90 transition-transform">
+              <X size={16} />
+            </button>
+          )}
         </div>
 
         {/* Lista de chats */}
         <div className="space-y-3">
-          {filteredChats.length === 0 && (
-            <p className="text-center text-zinc-500 text-sm py-8">No se encontraron chats.</p>
+          {isSearching && (
+            query.length < 2 ? (
+              <p className="text-center text-zinc-500 text-sm py-8">Escribí al menos 2 letras para buscar.</p>
+            ) : searching ? (
+              <p className="text-center text-zinc-500 text-sm py-8">Buscando...</p>
+            ) : results.length === 0 ? (
+              <p className="text-center text-zinc-500 text-sm py-8">No se encontraron mensajes.</p>
+            ) : (
+              <>
+                <p className="text-[11px] text-zinc-500 px-1">
+                  {results.length} resultado{results.length === 1 ? "" : "s"}
+                </p>
+                {results.map((m) => {
+                  const color = CHAT_COLORS[m.chat_id] || "#9D76C1";
+                  const Icon = CHAT_ICONS[m.chat_id];
+                  return (
+                    <div
+                      key={m.id}
+                      onClick={() => openChat(m.chat_id)}
+                      className="bg-[#1C1C1E] border border-zinc-800/80 rounded-2xl p-3 pl-0 flex items-center gap-3 shadow-sm relative overflow-hidden cursor-pointer active:scale-[0.98] active:bg-zinc-800/60 transition-all"
+                    >
+                      <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ backgroundColor: color }} />
+                      <div
+                        className="w-10 h-10 rounded-xl ml-4 flex items-center justify-center flex-shrink-0"
+                        style={{ backgroundColor: `${color}20`, color }}
+                      >
+                        {Icon && <Icon size={20} strokeWidth={1.5} />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-center mb-0.5">
+                          <span className={`text-lg truncate ${dancingFont.className}`} style={{ color }}>
+                            {CHAT_TITLES[m.chat_id]}
+                          </span>
+                          <span className="text-[11px] text-zinc-500 flex-shrink-0 ml-2">
+                            {formatPreviewTime(m.created_at)}
+                          </span>
+                        </div>
+                        <p className="text-xs text-zinc-400 line-clamp-2 break-words">
+                          <span className="font-semibold text-zinc-300">{m.sender === currentUser ? "Vos" : m.sender}:</span>{" "}
+                          {highlight(m.text, query)}
+                        </p>
+                      </div>
+                      <ChevronRight size={18} className="text-zinc-600 mr-3 flex-shrink-0" />
+                    </div>
+                  );
+                })}
+              </>
+            )
           )}
 
-          {filteredChats.map((key) => {
+          {!isSearching && TOPIC_CHATS.map((key) => {
             const s = chatsSummary[key] || {};
             const color = CHAT_COLORS[key] || "#9D76C1";
             const Icon = CHAT_ICONS[key];

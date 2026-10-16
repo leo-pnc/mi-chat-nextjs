@@ -76,10 +76,6 @@ function ChatInner() {
   const typingResetRef = useRef(null);
   const lastTypingSentRef = useRef(0);
   const hasScrolledInitiallyRef = useRef(false);
-  const [showChatIntro, setShowChatIntro] = useState(true);
-  const chatContainerRef = useRef(null);
-  const headerIconRef = useRef(null);
-  const [introTarget, setIntroTarget] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -252,33 +248,6 @@ function ChatInner() {
   useEffect(() => {
     hasScrolledInitiallyRef.current = false;
   }, [chatKey]);
-
-  // Animación de entrada: el ícono del chat aparece grande en el centro,
-  // se queda un rato ahí quieto, y recién después "viaja" hasta su lugar
-  // en el header, donde se queda.
-  useEffect(() => {
-    if (!chatKey) return;
-    setShowChatIntro(true);
-    const t = setTimeout(() => setShowChatIntro(false), 1500);
-    return () => clearTimeout(t);
-  }, [chatKey]);
-
-  // Medimos la posición REAL del ícono del header (que ya está en el DOM,
-  // aunque invisible) para que el ícono que viaja aterrice exáctamente ahí,
-  // en vez de un valor fijo a mano que podía no coincidir y generar un salto.
-  useLayoutEffect(() => {
-    if (!showChatIntro) return;
-    const headerEl = headerIconRef.current;
-    const containerEl = chatContainerRef.current;
-    if (!headerEl || !containerEl) return;
-    const headerRect = headerEl.getBoundingClientRect();
-    const containerRect = containerEl.getBoundingClientRect();
-    setIntroTarget({
-      top: headerRect.top - containerRect.top,
-      left: headerRect.left - containerRect.left,
-      size: headerRect.width,
-    });
-  }, [showChatIntro, chatKey]);
 
   // Auto-resize del cuadro de texto: arranca en una línea y crece con el contenido hasta el máximo del CSS
   useEffect(() => {
@@ -580,36 +549,14 @@ function ChatInner() {
   const PartnerMoodIcon = MOODS[partnerMood]?.Icon;
 
   return (
-    <div className="chat-container" ref={chatContainerRef}>
-      {showChatIntro && ChatIcon && (
-        <div className="chat-intro-overlay" aria-hidden="true">
-          <ChatIcon
-            strokeWidth={1.75}
-            className="chat-intro-icon"
-            style={
-              introTarget
-                ? {
-                    '--intro-end-top': `${introTarget.top}px`,
-                    '--intro-end-left': `${introTarget.left}px`,
-                    '--intro-end-size': `${introTarget.size}px`,
-                  }
-                : undefined
-            }
-          />
-        </div>
-      )}
+    <div className="chat-container">
       <header className="chat-header">
         <button className="icon-only-btn" onClick={() => router.push('/chats')} title="Volver">
           <ArrowLeft size={20} />
         </button>
         <div className="header-avatar" style={{ color: CHAT_COLORS[chatKey] || '#F2879D' }}>
           {ChatIcon && (
-            <ChatIcon
-              ref={headerIconRef}
-              size={20}
-              strokeWidth={1.75}
-              className={`header-chat-icon${showChatIntro ? ' pending' : ''}`}
-            />
+            <ChatIcon size={20} strokeWidth={1.75} className="header-chat-icon" />
           )}
         </div>
         <div className="header-title-block">

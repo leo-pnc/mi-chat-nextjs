@@ -81,7 +81,7 @@ export default function AgreementsPage() {
   return (
     <div className="agreements-container">
       <header className="agreements-header">
-        <button className="icon-only-btn" onClick={() => router.push('/menu')} title="Volver">
+        <button className="icon-only-btn" onClick={() => router.back()} title="Volver">
           <ArrowLeft size={20} />
         </button>
         <div className="agreements-title-header inline-icon-text">
