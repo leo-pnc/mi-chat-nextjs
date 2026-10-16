@@ -79,27 +79,35 @@ export default function CalendarioPage() {
   const handleSaveEvent = async () => {
     if (!newEventTitle || !newEventDate || (!isAllDay && !newEventTime)) return;
     
-    const eventToSave = {
-      title: newEventTitle,
-      date: newEventDate,
-      time: isAllDay ? null : newEventTime,
-      is_all_day: isAllDay,
-      type: newEventType,
-      is_surprise: isSurprise,
-      // Si tenés configurado Auth y querés guardar quién lo creó, podrías agregar:
-      // created_by: usuarioActual.id 
-    };
-
     try {
+      // 1. Le preguntamos a Supabase quién es el usuario actual logueado
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !authData.user) {
+        alert("Necesitas estar logueado para crear un plan.");
+        return;
+      }
+
+      // 2. Armamos el evento sumando el ID de quién lo creó
+      const eventToSave = {
+        title: newEventTitle,
+        date: newEventDate,
+        time: isAllDay ? null : newEventTime,
+        is_all_day: isAllDay,
+        type: newEventType,
+        is_surprise: isSurprise,
+        creator: authData.user.id // <--- ACÁ GUARDAMOS EL ID DEL USUARIO
+      };
+
+      // 3. Lo mandamos a la base de datos
       const { data, error } = await supabase
         .from('calendar_events')
         .insert([eventToSave])
-        .select(); // El .select() hace que nos devuelva la fila recién creada
+        .select(); 
 
       if (error) throw error;
 
       if (data) {
-        // Agregamos el evento nuevo al estado actual sin tener que recargar la página
         setEvents((prev) => [...prev, data[0]].sort((a, b) => new Date(a.date) - new Date(b.date)));
         handleCloseAddEvent();
       }
