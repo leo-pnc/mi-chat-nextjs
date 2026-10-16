@@ -2,16 +2,12 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  Hand, CalendarCheck, Star, Check, CheckCheck, 
-  Image as ImageIcon, MessageCircle, Heart, Menu, Home, RefreshCw 
-} from 'lucide-react';
+import { Hand, CalendarCheck, Star, Check, CheckCheck, Image as ImageIcon, MessageCircle, Heart, Menu, Home, RefreshCw, CalendarDays } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { MOODS, getPartnerName, TOPIC_CHATS, CHAT_TITLES, CHAT_ICONS, getWeekStart, formatPreviewText } from '@/lib/config';
 import { formatPreviewTime } from '@/lib/dateFormat';
 import { enablePushNotifications } from '@/lib/push';
 import { Dancing_Script } from 'next/font/google';
-import { Home, ImageIcon, MessageCircle, Heart, CalendarDays } from 'lucide-react';
 
 const dancingFont = Dancing_Script({ 
   subsets: ['latin'], 
