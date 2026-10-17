@@ -94,7 +94,7 @@ export default function RegistroPage() {
           Para proteger nuestra comunidad, enviamos un enlace de confirmación a <strong className="text-white">{email}</strong>. 
           Revisá tu bandeja de entrada (y el spam) para activar tu cuenta.
         </p>
-        <Link href="/login" className="bg-[#F2879D] text-black font-semibold rounded-full px-8 py-3.5 flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-[0_4px_15px_rgba(242,135,157,0.2)]">
+        <Link href="/page.js" className="bg-[#F2879D] text-black font-semibold rounded-full px-8 py-3.5 flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-[0_4px_15px_rgba(242,135,157,0.2)]">
           Ir a Iniciar sesión <ArrowRight size={18} />
         </Link>
       </div>
