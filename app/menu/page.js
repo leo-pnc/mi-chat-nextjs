@@ -124,8 +124,12 @@ export default function MenuPage() {
         router.push('/');
         return;
       }
-      setCurrentUser(session.user.app_metadata?.display_name || null);
-      enablePushNotifications(session.user.app_metadata?.display_name);
+      
+      // Buscamos el nombre real que guardamos en el registro o usamos el email de respaldo
+      const userName = session.user.user_metadata?.first_name || session.user.email;
+      
+      setCurrentUser(userName);
+      enablePushNotifications(userName);
     })();
   }, [router]);
 
