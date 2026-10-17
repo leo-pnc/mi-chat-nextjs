@@ -1,21 +1,64 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Mail, Lock, EyeOff, Eye, ArrowRight, Heart } from "lucide-react";
 import { Dancing_Script } from 'next/font/google';
 import Link from "next/link";
 
+// IMPORTAMOS SUPABASE (Asegurate de que la ruta sea correcta)
+import { supabase } from "@/lib/supabaseClient";
+
 const dancingFont = Dancing_Script({ subsets: ['latin'], weight: ['400', '600', '700'] });
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
+  
+  // Estados para manejar la carga y los errores
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState(null);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    console.log("Iniciando sesión con:", email, password);
-    // Acá iría tu conexión con Supabase Auth
+    setIsLoading(true);
+    setErrorMsg(null); // Limpiamos errores previos
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      // Si salió todo bien, lo mandamos a la sala de espera o al menú principal
+      console.log("Sesión iniciada con éxito:", data.user.email);
+      router.push("/menu"); // Cambiá esto por /sala-espera si querés probar ese flujo
+
+    } catch (error) {
+      console.error("Error al iniciar sesión:", error.message);
+      
+      // Traducimos los errores de Supabase al español para que sean amigables
+      if (error.message.includes("Invalid login credentials")) {
+        setErrorMsg("El correo o la contraseña son incorrectos.");
+      } else if (error.message.includes("Email not confirmed")) {
+        setErrorMsg("Tenés que confirmar tu correo primero. Revisá tu bandeja de entrada.");
+      } else {
+        setErrorMsg("Hubo un problema al iniciar sesión. Intentá de nuevo.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Función temporal para el botón de Google (lo armaremos en el próximo paso)
+  const handleGoogleLogin = () => {
+    console.log("Iniciando con Google... (Próximamente)");
   };
 
   return (
@@ -24,7 +67,7 @@ export default function LoginPage() {
       {/* IMAGEN DE FONDO CON DEGRADADO */}
       <div className="absolute top-0 left-0 w-full h-[55vh] z-0">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#121212]/60 to-[#121212] z-10"></div>
-        {/* Cambiá este src por el de tu imagen real, ej: "/fondo-login.jpg" */}
+        {/* Cambiá este src por el de tu imagen real, ej: "/fondo-login.jpg" o "/tazas-inicio.png" */}
         <img 
           src="/tazas-inicio.png" 
           alt="Fondo cálido" 
@@ -51,6 +94,13 @@ export default function LoginPage() {
         {/* FORMULARIO */}
         <form onSubmit={handleLogin} className="space-y-4 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-150 fill-mode-backwards">
           
+          {/* MENSAJE DE ERROR GLOBAL */}
+          {errorMsg && (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mb-2 animate-in fade-in zoom-in-95">
+              <p className="text-xs text-red-400 text-center font-medium">{errorMsg}</p>
+            </div>
+          )}
+
           {/* EMAIL */}
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -60,7 +110,7 @@ export default function LoginPage() {
               type="email" 
               placeholder="Correo electrónico"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {setEmail(e.target.value); setErrorMsg(null);}}
               className="w-full bg-[#1A1A1A]/80 backdrop-blur-sm border border-zinc-800/80 text-white rounded-full py-3.5 pl-11 pr-4 focus:outline-none focus:border-[#F2879D] transition-colors placeholder:text-zinc-600 text-sm"
               required
             />
@@ -75,7 +125,7 @@ export default function LoginPage() {
               type={showPassword ? "text" : "password"} 
               placeholder="Contraseña"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {setPassword(e.target.value); setErrorMsg(null);}}
               className="w-full bg-[#1A1A1A]/80 backdrop-blur-sm border border-zinc-800/80 text-white rounded-full py-3.5 pl-11 pr-12 focus:outline-none focus:border-[#F2879D] transition-colors placeholder:text-zinc-600 text-sm"
               required
             />
@@ -105,9 +155,10 @@ export default function LoginPage() {
           {/* BOTÓN INICIAR SESIÓN */}
           <button 
             type="submit"
-            className="w-full bg-gradient-to-r from-[#F497A9] to-[#F2879D] text-black font-semibold rounded-full py-3.5 flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-[0_4px_15px_rgba(242,135,157,0.2)] text-sm"
+            disabled={isLoading || !email || !password}
+            className="w-full bg-gradient-to-r from-[#F497A9] to-[#F2879D] text-black font-semibold rounded-full py-3.5 flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-[0_4px_15px_rgba(242,135,157,0.2)] text-sm disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            Iniciar sesión <ArrowRight size={18} />
+            {isLoading ? "Iniciando..." : "Iniciar sesión"} <ArrowRight size={18} />
           </button>
         </form>
 
@@ -121,6 +172,7 @@ export default function LoginPage() {
         {/* BOTÓN DE GOOGLE */}
         <button 
           type="button"
+          onClick={handleGoogleLogin}
           className="w-full bg-transparent border border-zinc-800 hover:bg-zinc-900/50 text-zinc-300 rounded-full py-3.5 flex items-center justify-center gap-3 active:scale-[0.98] transition-all text-sm animate-in fade-in duration-700 delay-300 fill-mode-backwards"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
