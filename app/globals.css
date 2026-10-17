@@ -2576,3 +2576,19 @@ button {
   color: #1a0d10;
   box-shadow: 0 4px 14px rgba(242, 135, 157, 0.4);
 }
+
+/* Animaciones de la pantalla de fotos */
+@keyframes photo-sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.photo-sheet {
+  animation: photo-sheet-up 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes photo-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.photo-fade {
+  animation: photo-fade-in 0.2s ease both;
+}
