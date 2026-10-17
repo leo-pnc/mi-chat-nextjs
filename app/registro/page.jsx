@@ -101,8 +101,8 @@ export default function RegistroPage() {
 
       } catch (error) {
         console.error("Error al registrar:", error.message);
-        if (error.message.includes("already registered")) {
-          setErrors({ ...errors, email: "Este correo ya está registrado." });
+        if (error.message.includes("already registered") || error.message.includes("User already registered")) {
+            setErrors({ ...errors, email: "Este correo ya tiene un espacio. Tocá 'Iniciar sesión' abajo." });
         } else {
           alert("Hubo un error: " + error.message);
         }
@@ -123,7 +123,7 @@ export default function RegistroPage() {
           Para proteger nuestra comunidad, enviamos un enlace de confirmación a <strong className="text-white">{email}</strong>. 
           Revisá tu bandeja de entrada (y el spam) para activar tu cuenta.
         </p>
-        <Link href="/login" className="bg-[#F2879D] text-black font-semibold rounded-full px-8 py-3.5 flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-[0_4px_15px_rgba(242,135,157,0.2)]">
+        <Link href="/page.js" className="bg-[#F2879D] text-black font-semibold rounded-full px-8 py-3.5 flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-[0_4px_15px_rgba(242,135,157,0.2)]">
           Ir a Iniciar sesión <ArrowRight size={18} />
         </Link>
       </div>
@@ -277,7 +277,7 @@ export default function RegistroPage() {
         </button>
 
         <div className="text-center mt-auto">
-          <Link href="/login" className="text-sm text-[#F2879D] hover:text-[#F497A9] font-medium inline-flex items-center justify-center gap-1">
+          <Link href="/login.js" className="text-sm text-[#F2879D] hover:text-[#F497A9] font-medium inline-flex items-center justify-center gap-1">
             <span className="text-zinc-500 font-normal mr-1">¿Ya tenés una cuenta?</span> Iniciar sesión <ArrowRight size={14} />
           </Link>
         </div>
