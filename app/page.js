@@ -26,7 +26,7 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#121212]/60 to-[#121212] z-10"></div>
         {/* Cambiá este src por el de tu imagen real, ej: "/fondo-login.jpg" */}
         <img 
-          src="public/tazas-inicio.png" 
+          src="/tazas-inicio.png" 
           alt="Fondo cálido" 
           className="w-full h-full object-cover object-center opacity-80"
         />
