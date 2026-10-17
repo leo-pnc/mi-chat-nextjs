@@ -97,6 +97,15 @@ export default function RegistroPage() {
 
         if (error) throw error;
 
+        // LA MAGIA ANTI-HACKERS: 
+        // Si el usuario ya existe, Supabase devuelve identities vacío.
+        if (data?.user?.identities?.length === 0) {
+          setErrors({ ...errors, email: "Este correo ya tiene un espacio. Tocá 'Iniciar sesión'." });
+          setIsRegistering(false);
+          return; // Cortamos la ejecución acá para que no avance
+        }
+
+        // Si pasó todo bien, mostramos la pantalla de éxito
         setIsEmailSent(true);
 
       } catch (error) {
