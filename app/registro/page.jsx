@@ -4,6 +4,9 @@ import { Mail, Lock, EyeOff, Eye, ArrowRight, Heart, User, Calendar, CheckCircle
 import { Dancing_Script } from 'next/font/google';
 import Link from "next/link";
 
+// IMPORTAMOS SUPABASE (Asegurate de que esta ruta sea correcta en tu proyecto)
+import { supabase } from "@/lib/supabaseClient"; 
+
 const dancingFont = Dancing_Script({ subsets: ['latin'], weight: ['400', '600', '700'] });
 
 export default function RegistroPage() {
@@ -17,10 +20,11 @@ export default function RegistroPage() {
   
   const [errors, setErrors] = useState({});
   const [isEmailSent, setIsEmailSent] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false); 
 
   // Formateo automático de DD/MM/AAAA mientras se escribe
   const handleDateChange = (e) => {
-    let value = e.target.value.replace(/\D/g, ""); // Solo números
+    let value = e.target.value.replace(/\D/g, ""); 
     if (value.length > 8) value = value.slice(0, 8);
     
     if (value.length > 4) {
@@ -40,7 +44,6 @@ export default function RegistroPage() {
     if (!nameRegex.test(firstName)) newErrors.firstName = "Solo letras.";
     if (!nameRegex.test(lastName)) newErrors.lastName = "Solo letras.";
 
-    // Validación de fecha manual
     if (birthDate.length !== 10) {
       newErrors.birthDate = "Formato DD/MM/AAAA.";
     } else {
@@ -52,7 +55,6 @@ export default function RegistroPage() {
       const selected = new Date(yearInt, monthInt - 1, dayInt);
       const today = new Date();
       
-      // Chequear que la fecha exista (ej: no 31/02/2000)
       if (selected.getFullYear() !== yearInt || selected.getMonth() !== monthInt - 1 || selected.getDate() !== dayInt) {
         newErrors.birthDate = "Fecha inválida.";
       } else {
@@ -75,11 +77,38 @@ export default function RegistroPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     if (validateForm()) {
-      console.log("Registrando:", firstName, lastName, email, birthDate);
-      setIsEmailSent(true);
+      setIsRegistering(true);
+      
+      try {
+        const { data, error } = await supabase.auth.signUp({
+          email: email,
+          password: password,
+          options: {
+            data: {
+              first_name: firstName,
+              last_name: lastName,
+              birth_date: birthDate,
+            }
+          }
+        });
+
+        if (error) throw error;
+
+        setIsEmailSent(true);
+
+      } catch (error) {
+        console.error("Error al registrar:", error.message);
+        if (error.message.includes("already registered")) {
+          setErrors({ ...errors, email: "Este correo ya está registrado." });
+        } else {
+          alert("Hubo un error: " + error.message);
+        }
+      } finally {
+        setIsRegistering(false);
+      }
     }
   };
 
@@ -94,7 +123,7 @@ export default function RegistroPage() {
           Para proteger nuestra comunidad, enviamos un enlace de confirmación a <strong className="text-white">{email}</strong>. 
           Revisá tu bandeja de entrada (y el spam) para activar tu cuenta.
         </p>
-        <Link href="/page.js" className="bg-[#F2879D] text-black font-semibold rounded-full px-8 py-3.5 flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-[0_4px_15px_rgba(242,135,157,0.2)]">
+        <Link href="/login" className="bg-[#F2879D] text-black font-semibold rounded-full px-8 py-3.5 flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-[0_4px_15px_rgba(242,135,157,0.2)]">
           Ir a Iniciar sesión <ArrowRight size={18} />
         </Link>
       </div>
@@ -170,7 +199,7 @@ export default function RegistroPage() {
             {errors.email && <p className="text-[10px] text-red-400 absolute -bottom-4 left-4">{errors.email}</p>}
           </div>
 
-          {/* FECHA DE NACIMIENTO (Teclado numérico, formato automático) */}
+          {/* FECHA DE NACIMIENTO */}
           <div className="relative mt-2">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <Calendar size={18} className={errors.birthDate ? "text-red-400" : "text-zinc-500"} />
@@ -224,9 +253,10 @@ export default function RegistroPage() {
 
           <button 
             type="submit"
-            className="w-full bg-gradient-to-r from-[#F497A9] to-[#F2879D] text-black font-semibold rounded-full py-3.5 mt-4 flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-[0_4px_15px_rgba(242,135,157,0.2)] text-sm"
+            disabled={isRegistering}
+            className="w-full bg-gradient-to-r from-[#F497A9] to-[#F2879D] text-black font-semibold rounded-full py-3.5 mt-4 flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-[0_4px_15px_rgba(242,135,157,0.2)] text-sm disabled:opacity-70"
           >
-            Registrarme <ArrowRight size={18} />
+            {isRegistering ? "Creando cuenta..." : "Registrarme"} <ArrowRight size={18} />
           </button>
         </form>
 
