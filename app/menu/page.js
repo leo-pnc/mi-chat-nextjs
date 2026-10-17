@@ -2,11 +2,12 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Hand, CalendarCheck, Star, Check, CheckCheck, Image as ImageIcon, MessageCircle, Heart, Menu, Home, RefreshCw, CalendarDays } from 'lucide-react';
+import { Hand, CalendarCheck, Star, Check, CheckCheck, Image as ImageIcon, MessageCircle, Heart, Menu, Home, RefreshCw, CalendarDays, Settings } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { MOODS, getPartnerName, TOPIC_CHATS, CHAT_TITLES, CHAT_ICONS, getWeekStart, formatPreviewText } from '@/lib/config';
 import { formatPreviewTime } from '@/lib/dateFormat';
 import { enablePushNotifications } from '@/lib/push';
+import { useProfiles, formatTogether } from '@/lib/profiles';
 import { Dancing_Script } from 'next/font/google';
 
 const dancingFont = Dancing_Script({ 
@@ -129,6 +130,7 @@ export default function MenuPage() {
   }, [router]);
 
   const partnerName = currentUser ? getPartnerName(currentUser) : null;
+  const { ready: profilesReady, me, couple, nameOf, avatarOf, moodLabel } = useProfiles(currentUser);
 
   const loadChatsSummary = useCallback(async () => {
     if (!partnerName) return;
@@ -313,6 +315,13 @@ export default function MenuPage() {
         
         {/* Lado Derecho: Perfil de Pareja Minimalista */}
         <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => router.push('/configuracion')}
+            aria-label="Configuración"
+            className="w-10 h-10 rounded-full bg-[#1C1C1E] border border-zinc-800/80 flex items-center justify-center text-zinc-300 active:scale-90 transition-transform mr-1"
+          >
+            <Settings size={18} />
+          </button>
           
           {/* Foto Cuadrada con Bordes Redondos */}
           <div 
@@ -320,7 +329,7 @@ export default function MenuPage() {
             style={{ borderColor: MOODS[partnerMood]?.color || '#52525B' }}
           >
             <img 
-              src="https://images.unsplash.com/photo-1518199266791-5375a83190b7?q=80&w=200&auto=format&fit=crop" 
+              src={avatarOf(partnerName)} 
               alt={partnerName || "Pareja"} 
               className="w-full h-full object-cover"
             />
@@ -463,6 +472,37 @@ export default function MenuPage() {
           </button>
         </div>
 
+        {/* CONTADOR DE TIEMPO JUNTOS */}
+        {profilesReady && (() => {
+          const together = formatTogether(couple?.anniversary, me?.counter_format);
+          const since = couple?.anniversary
+            ? (() => { const [y, m, d] = couple.anniversary.split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' }); })()
+            : null;
+          return (
+            <div
+              onClick={() => router.push('/configuracion')}
+              className="rounded-3xl p-5 border border-zinc-800 bg-[#1C1C1E] flex items-center gap-4 cursor-pointer active:scale-[0.98] transition-transform"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-[#F2879D]/15 text-[#F2879D] flex items-center justify-center flex-shrink-0">
+                <Heart size={22} fill="currentColor" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-[10px] tracking-widest uppercase text-zinc-500 font-semibold mb-0.5">Nuestro tiempo juntos</h3>
+                {together ? (
+                  <>
+                    <p className={`text-2xl text-[#FDF2F2] leading-tight ${dancingFont.className}`}>
+                      {together.main} <span className="text-sm text-zinc-400">{together.sub}</span>
+                    </p>
+                    <p className="text-[11px] text-zinc-500 mt-0.5">desde el {since}</p>
+                  </>
+                ) : (
+                  <p className="text-sm text-zinc-300">Sumá la fecha de su aniversario</p>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* WIDGET GALLETA DE LA SUERTE */}
         <div 
           onClick={openCookie}
@@ -485,7 +525,7 @@ export default function MenuPage() {
           <div className="flex flex-col gap-2">
             {TOPIC_CHATS.map((key) => {
               const s = chatsSummary[key] || {};
-              const preview = formatPreviewText(s.lastMessage, currentUser, partnerName);
+              const preview = formatPreviewText(s.lastMessage, currentUser, nameOf(partnerName));
               return (
                 <div key={key} onClick={() => openChat(key)} className="bg-[#1C1C1E] border border-zinc-800/60 p-3.5 rounded-2xl flex items-center gap-3 active:bg-zinc-800 transition-colors">
                   <div className="w-12 h-12 bg-zinc-800 rounded-full flex items-center justify-center text-zinc-400">
@@ -578,7 +618,7 @@ export default function MenuPage() {
               <div key={myMood} className="mood-hero-icon">
                 {(() => { const MyMoodIcon = MOODS[myMood]?.Icon; return MyMoodIcon ? <MyMoodIcon size={28} strokeWidth={2.2} /> : null; })()}
               </div>
-              <span key={`${myMood}-label`} className="mood-hero-label">{MOODS[myMood]?.text}</span>
+              <span key={`${myMood}-label`} className="mood-hero-label">{moodLabel(currentUser, myMood)}</span>
               <span key={`${myMood}-underline`} className="mood-hero-underline" />
             </div>
             <div className="mood-strip">
@@ -590,7 +630,7 @@ export default function MenuPage() {
                     key={emoji}
                     className={`mood-strip-btn ${selected ? 'selected' : ''}`}
                     onClick={() => handleMoodSelect(emoji)}
-                    title={MOODS[emoji].text}
+                    title={moodLabel(currentUser, emoji)}
                     style={{ '--mood-color': MOODS[emoji].color }}
                   >
                     <MoodIcon size={17} strokeWidth={2.5} />

@@ -11,7 +11,8 @@ self.addEventListener('push', (event) => {
       body: data.body,
       icon: '/icon-192.png',
       badge: '/icon-badge-96.png',
-      data: { chatKey: data.chatKey },
+      data: { chatKey: data.chatKey, url: data.url },
+      silent: data.silent === true,
     })
   );
 });
@@ -24,7 +25,8 @@ self.addEventListener('fetch', () => {});
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const chatKey = event.notification.data?.chatKey;
-  const url = chatKey ? `/chat?chatKey=${chatKey}` : '/menu';
+  const customUrl = event.notification.data?.url;
+  const url = customUrl || (chatKey ? `/chat?chatKey=${chatKey}` : '/menu');
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientsArr) => {

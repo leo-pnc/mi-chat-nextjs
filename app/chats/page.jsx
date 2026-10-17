@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { MOODS, getPartnerName, TOPIC_CHATS, CHAT_TITLES, CHAT_ICONS, CHAT_COLORS, formatPreviewText } from "@/lib/config";
 import { formatPreviewTime } from "@/lib/dateFormat";
 import MoodNavButton from "@/app/MoodNavButton";
+import { useProfiles } from "@/lib/profiles";
 
 const dancingFont = Dancing_Script({ subsets: ["latin"], weight: ["400", "600"] });
 
@@ -35,6 +36,7 @@ export default function ChatsPage() {
   const [searching, setSearching] = useState(false);
 
   const partnerName = currentUser ? getPartnerName(currentUser) : null;
+  const { nameOf, avatarOf } = useProfiles(currentUser);
 
   useEffect(() => {
     (async () => {
@@ -169,7 +171,7 @@ export default function ChatsPage() {
             className="w-12 h-12 rounded-[14px] border-[1.5px] flex-shrink-0 overflow-hidden shadow-sm relative transition-colors duration-300"
             style={{ borderColor: MOODS[partnerMood]?.color || "#52525B" }}
           >
-            <img src={PARTNER_AVATAR} alt={partnerName || "Pareja"} className="w-full h-full object-cover" />
+            <img src={avatarOf(partnerName)} alt={partnerName || "Pareja"} className="w-full h-full object-cover" />
             <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-br-[12px] rounded-tl-lg border-2 border-[#121212] ${partnerOnline ? "bg-green-500" : "bg-zinc-600"}`} />
           </div>
           </div>
@@ -236,7 +238,7 @@ export default function ChatsPage() {
                           </span>
                         </div>
                         <p className="text-xs text-zinc-400 line-clamp-2 break-words">
-                          <span className="font-semibold text-zinc-300">{m.sender === currentUser ? "Vos" : m.sender}:</span>{" "}
+                          <span className="font-semibold text-zinc-300">{m.sender === currentUser ? "Vos" : nameOf(m.sender)}:</span>{" "}
                           {highlight(m.text, query)}
                         </p>
                       </div>
@@ -252,7 +254,7 @@ export default function ChatsPage() {
             const s = chatsSummary[key] || {};
             const color = CHAT_COLORS[key] || "#9D76C1";
             const Icon = CHAT_ICONS[key];
-            const preview = formatPreviewText(s.lastMessage, currentUser, partnerName);
+            const preview = formatPreviewText(s.lastMessage, currentUser, nameOf(partnerName));
             const lastIsMine = s.lastMessage?.sender === currentUser
               && !s.lastMessage.deleted
               && s.lastMessage.type !== "timeout_start"

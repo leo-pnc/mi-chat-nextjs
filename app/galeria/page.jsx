@@ -9,6 +9,7 @@ import { Dancing_Script } from "next/font/google";
 import { supabase } from "@/lib/supabaseClient";
 import { MOODS, getPartnerName } from "@/lib/config";
 import MoodNavButton from "@/app/MoodNavButton";
+import { useProfiles } from "@/lib/profiles";
 
 const dancingFont = Dancing_Script({ subsets: ["latin"], weight: ["400", "600"] });
 
@@ -75,6 +76,7 @@ export default function GaleriaPage() {
   const viewerTouchX = useRef(null);
 
   const partnerName = currentUser ? getPartnerName(currentUser) : null;
+  const { nameOf, avatarOf } = useProfiles(currentUser);
 
   // Sesión
   useEffect(() => {
@@ -280,7 +282,7 @@ export default function GaleriaPage() {
             className="w-12 h-12 rounded-full border-[1.5px] flex-shrink-0 overflow-hidden shadow-sm transition-colors duration-300"
             style={{ borderColor: MOODS[partnerMood]?.color || "#52525B" }}
           >
-            <img src={PARTNER_AVATAR} alt={partnerName || "Pareja"} className="w-full h-full object-cover" />
+            <img src={avatarOf(partnerName)} alt={partnerName || "Pareja"} className="w-full h-full object-cover" />
           </div>
         </div>
 
@@ -500,7 +502,7 @@ export default function GaleriaPage() {
                 {viewerPhoto.category}
               </span>
               <p className="text-[11px] text-zinc-400 mt-1">
-                {fmtDate(viewerPhoto.created_at)} · {viewerPhoto.uploader === currentUser ? "Subida por vos" : `Subida por ${viewerPhoto.uploader}`}
+                {fmtDate(viewerPhoto.created_at)} · {viewerPhoto.uploader === currentUser ? "Subida por vos" : `Subida por ${nameOf(viewerPhoto.uploader)}`}
               </p>
             </div>
             <div className="flex gap-2">

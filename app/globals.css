@@ -2410,13 +2410,13 @@ button {
   --surface-3: #2a2a2c;
   --surface-them: #2a2a2c;
   --border-soft: rgba(255, 255, 255, 0.09);
-  --wine-bright: #f2879d;
-  --wine-deep: #e5738a;
-  --mauve: #f2879d;
-  --glow: rgba(242, 135, 157, 0.4);
+  --wine-bright: var(--accent);
+  --wine-deep: var(--accent-dark);
+  --mauve: var(--accent);
+  --glow: color-mix(in srgb, var(--accent) 40%, transparent);
   --sheet-top: #1c1c1e;
   --sheet-bottom: #151515;
-  --bubble-me: #f5a3ab;
+  --bubble-me: var(--accent-soft);
   background: #121212;
 }
 
@@ -2455,7 +2455,7 @@ button {
 }
 
 .chat-title-heart {
-  color: #f2879d;
+  color: var(--accent);
   flex-shrink: 0;
 }
 
@@ -2532,7 +2532,7 @@ button {
 }
 
 .chat-message.important {
-  box-shadow: 0 0 0 2px #f2879d, 0 0 14px rgba(242, 135, 157, 0.35);
+  box-shadow: 0 0 0 2px var(--accent), 0 0 14px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
 .typing-bubble {
@@ -2544,7 +2544,7 @@ button {
 }
 
 .timeout-banner {
-  background: linear-gradient(90deg, #e5738a, #f5a3ab);
+  background: linear-gradient(90deg, var(--accent-dark), var(--accent-soft));
   color: #2a1418;
 }
 
@@ -2566,15 +2566,15 @@ button {
 }
 
 .message-input-wrap:focus-within {
-  border-color: #f2879d;
+  border-color: var(--accent);
 }
 
 .send-btn {
   width: 44px;
   height: 44px;
-  background: #f2879d;
+  background: var(--accent);
   color: #1a0d10;
-  box-shadow: 0 4px 14px rgba(242, 135, 157, 0.4);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 40%, transparent);
 }
 
 /* Animaciones de la pantalla de fotos */
@@ -2591,4 +2591,47 @@ button {
 }
 .photo-fade {
   animation: photo-fade-in 0.2s ease both;
+}
+
+/* -------------------- COLOR DE ACENTO (Configuración) -------------------- */
+:root {
+  --accent: #f2879d;
+  --accent-soft: color-mix(in srgb, var(--accent) 72%, #ffffff);
+  --accent-dark: color-mix(in srgb, var(--accent) 85%, #000000);
+}
+
+/* Las pantallas usan el rosa original como clase de Tailwind; acá lo
+   redirigimos al acento elegido para no tocar cada pantalla una por una. */
+.text-\[\#F2879D\] { color: var(--accent); }
+.bg-\[\#F2879D\] { background-color: var(--accent); }
+.border-\[\#F2879D\] { border-color: var(--accent); }
+.bg-\[\#F2879D\]\/25 { background-color: color-mix(in srgb, var(--accent) 25%, transparent); }
+.bg-\[\#F2879D\]\/15 { background-color: color-mix(in srgb, var(--accent) 15%, transparent); }
+.border-\[\#F2879D\]\/50 { border-color: color-mix(in srgb, var(--accent) 50%, transparent); }
+.border-\[\#F2879D\]\/20 { border-color: color-mix(in srgb, var(--accent) 20%, transparent); }
+.focus\:border-\[\#F2879D\]:focus { border-color: var(--accent); }
+.group:focus-within .group-focus-within\:text-\[\#F2879D\] { color: var(--accent); }
+
+/* -------------------- FONDO PERSONALIZADO DEL CHAT -------------------- */
+.chat-container.has-bg {
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.chat-custom-bg {
+  position: absolute;
+  inset: -24px;
+  z-index: -1;
+  background-size: cover;
+  background-position: center;
+  filter: blur(14px) brightness(0.4);
+  pointer-events: none;
+}
+
+.chat-container.has-bg .message-container {
+  background: transparent;
+}
+
+.chat-container.has-bg .chat-wallpaper-icon {
+  display: none;
 }

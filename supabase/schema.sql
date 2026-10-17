@@ -145,3 +145,23 @@ alter publication supabase_realtime add table weekly_checkins;
 -- where email = 'EMAIL_DE_ESTEFI_AQUI';
 --
 -- Esto es lo que le permite a la app saber "quién sos" después de loguearte.
+
+-- ============================================================
+-- Agregados posteriores (ya aplicados en el proyecto "Chatcito")
+-- Los tienen que correr si arman la base desde cero.
+-- ============================================================
+--
+-- public.calendar_events : planes de la agenda (date, time, type, is_surprise...)
+-- public.photos          : fotos (path en el bucket privado "photos", category, is_favorite)
+-- public.profiles        : apodos, avatar, estados de ánimo propios, acento, notificaciones
+-- public.couple_settings : fecha de aniversario (una sola fila, id = 1)
+-- public.suggestions     : buzón de deseos para el programador
+--
+-- Las definiciones completas quedaron en el historial de migraciones de Supabase
+-- (create_photos_table_and_bucket y create_settings_tables).
+--
+-- Database Webhooks necesarios (mismo URL /api/send-push y mismo secreto que el de messages):
+--   - calendar_events  -> INSERT  (aviso de nuevo plan)
+--   - user_status      -> UPDATE  (radar de humor)
+--   - suggestions      -> INSERT  (aviso al programador)
+-- Recordatorios 24 hs antes: Vercel Cron llama a /api/send-reminders (ver vercel.json).

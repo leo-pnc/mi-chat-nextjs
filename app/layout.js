@@ -1,6 +1,7 @@
 import './globals.css';
 import ViewportHeightFix from './ViewportHeightFix';
 import ServiceWorkerRegister from './ServiceWorkerRegister';
+import AccentApplier from './AccentApplier';
 
 export const metadata = {
   title: 'Chat Pareja',
@@ -36,6 +37,7 @@ export default function RootLayout({ children }) {
       <body>
         <ViewportHeightFix />
         <ServiceWorkerRegister />
+        <AccentApplier />
         {children}
       </body>
     </html>

@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { Heart } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { MOODS } from "@/lib/config";
+import { useProfiles } from "@/lib/profiles";
 
 // Botón "Ánimo" de la barra inferior + su selector de estado de ánimo.
 // Es autónomo: carga el ánimo del usuario y lo guarda solo, así se puede
@@ -14,6 +15,7 @@ export default function MoodNavButton() {
   const [show, setShow] = useState(false);
   const [dragY, setDragY] = useState(0);
   const dragStartY = useRef(null);
+  const { moodLabel } = useProfiles(userName);
 
   useEffect(() => {
     (async () => {
@@ -92,7 +94,7 @@ export default function MoodNavButton() {
               <div key={myMood} className="mood-hero-icon">
                 {MyMoodIcon && <MyMoodIcon size={28} strokeWidth={2.2} />}
               </div>
-              <span key={`${myMood}-label`} className="mood-hero-label">{MOODS[myMood]?.text}</span>
+              <span key={`${myMood}-label`} className="mood-hero-label">{moodLabel(userName, myMood)}</span>
               <span key={`${myMood}-underline`} className="mood-hero-underline" />
             </div>
             <div className="mood-strip">
@@ -103,7 +105,7 @@ export default function MoodNavButton() {
                     key={emoji}
                     className={`mood-strip-btn ${emoji === myMood ? "selected" : ""}`}
                     onClick={() => handleMoodSelect(emoji)}
-                    title={MOODS[emoji].text}
+                    title={moodLabel(userName, emoji)}
                     style={{ "--mood-color": MOODS[emoji].color }}
                   >
                     <MoodIcon size={17} strokeWidth={2.5} />

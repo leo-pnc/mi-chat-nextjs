@@ -10,6 +10,7 @@ import {
 import { Dancing_Script } from 'next/font/google';
 import { supabase } from '@/lib/supabaseClient';
 import { MOODS, getPartnerName, CHAT_TITLES, CHAT_ICONS, CHAT_COLORS, CHAT_WALLPAPER_ICONS, REPAIR_MESSAGES } from '@/lib/config';
+import { useProfiles } from '@/lib/profiles';
 import { findProfanity } from '@/lib/profanity';
 import { formatDayLabel, isSameDay } from '@/lib/dateFormat';
 
@@ -93,6 +94,7 @@ function ChatInner() {
   }, [router, chatKey]);
 
   const partnerName = currentUser ? getPartnerName(currentUser) : null;
+  const { chatBgUrl, avatarOf } = useProfiles(currentUser);
 
   const markPartnerMessagesRead = useCallback(async () => {
     if (!currentUser || !chatKey || !partnerName) return;
@@ -549,14 +551,21 @@ function ChatInner() {
   const PartnerMoodIcon = MOODS[partnerMood]?.Icon;
 
   return (
-    <div className="chat-container">
+    <div className={`chat-container${chatBgUrl ? ' has-bg' : ''}`}>
+      {chatBgUrl && <div className="chat-custom-bg" style={{ backgroundImage: `url(${chatBgUrl})` }} />}
       <header className="chat-header">
         <button className="icon-only-btn" onClick={() => router.push('/chats')} title="Volver">
           <ArrowLeft size={20} />
         </button>
-        <div className="header-avatar" style={{ color: CHAT_COLORS[chatKey] || '#F2879D' }}>
+        <div className="header-avatar relative" style={{ color: CHAT_COLORS[chatKey] || '#F2879D' }}>
+          <img src={avatarOf(partnerName)} alt={partnerName || ''} className="w-full h-full object-cover rounded-full" />
           {ChatIcon && (
-            <ChatIcon size={20} strokeWidth={1.75} className="header-chat-icon" />
+            <span
+              className="absolute -bottom-0.5 -right-0.5 w-[18px] h-[18px] rounded-full flex items-center justify-center border-2 border-[#121212]"
+              style={{ backgroundColor: CHAT_COLORS[chatKey] || '#F2879D', color: '#1a0d10' }}
+            >
+              <ChatIcon size={10} strokeWidth={2.5} />
+            </span>
           )}
         </div>
         <div className="header-title-block">

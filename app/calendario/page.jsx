@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, Bell, CalendarHeart, Heart, Plus, ArrowRight, Plane, Film, Gift, Coffee, Home as HomeIcon, Image as ImageIcon, MessageCircle, CalendarDays, X, Clock, Calendar, Sparkles, Tag, Timer, Trash2 } from "lucide-react";
 import { Dancing_Script } from 'next/font/google';
 import MoodNavButton from "@/app/MoodNavButton";
+import { useProfiles } from "@/lib/profiles";
 
 import { supabase } from "@/lib/supabaseClient"; 
 
@@ -98,6 +99,8 @@ export default function CalendarioPage() {
   
   // Guardamos el ID del usuario actual para saber de quién es cada plan
   const [currentUserId, setCurrentUserId] = useState(null);
+  const [currentUserName, setCurrentUserName] = useState(null);
+  const { me, avatarByUserId } = useProfiles(currentUserName);
   
   const [selectedDateStr, setSelectedDateStr] = useState(null);
 
@@ -172,7 +175,10 @@ export default function CalendarioPage() {
     try {
       // 1. Buscamos quién es el usuario actual
       const { data: authData } = await supabase.auth.getUser();
-      if (authData?.user) setCurrentUserId(authData.user.id);
+      if (authData?.user) {
+        setCurrentUserId(authData.user.id);
+        setCurrentUserName(authData.user.app_metadata?.display_name || null);
+      }
 
       // 2. Traemos todos los eventos
       const { data, error } = await supabase
@@ -417,7 +423,7 @@ export default function CalendarioPage() {
               
               // DETERMINAMOS QUÉ AVATAR MOSTRAR
               const isMine = ev.creator === currentUserId;
-              const organizerAvatar = isMine ? MY_AVATAR : PARTNER_AVATAR;
+              const organizerAvatar = avatarByUserId(ev.creator);
 
               return (
                 <SwipeableEvent
@@ -464,6 +470,7 @@ export default function CalendarioPage() {
       <button 
         onClick={() => {
           if (selectedDateStr) setNewEventDate(selectedDateStr);
+          setIsSurprise(!!me?.default_surprise);
           setShowAddEvent(true);
         }}
         className="fixed bottom-20 right-6 w-14 h-14 bg-[#F2879D] text-black rounded-full flex items-center justify-center shadow-[0_4px_20px_rgba(242,135,157,0.4)] z-30 active:scale-95 transition-transform"
