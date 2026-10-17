@@ -38,7 +38,7 @@ export default function LoginPage() {
 
       // Si salió todo bien, lo mandamos a la sala de espera o al menú principal
       console.log("Sesión iniciada con éxito:", data.user.email);
-      router.push("/menu"); // Cambiá esto por /sala-espera si querés probar ese flujo
+      router.push("/sala-espera"); 
 
     } catch (error) {
       console.error("Error al iniciar sesión:", error.message);
