@@ -286,7 +286,7 @@ export default function RegistroPage() {
         </button>
 
         <div className="text-center mt-auto">
-          <Link href="login.js" className="text-sm text-[#F2879D] hover:text-[#F497A9] font-medium inline-flex items-center justify-center gap-1">
+          <Link href="page.js" className="text-sm text-[#F2879D] hover:text-[#F497A9] font-medium inline-flex items-center justify-center gap-1">
             <span className="text-zinc-500 font-normal mr-1">¿Ya tenés una cuenta?</span> Iniciar sesión <ArrowRight size={14} />
           </Link>
         </div>
