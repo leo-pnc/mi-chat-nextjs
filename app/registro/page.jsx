@@ -27,7 +27,7 @@ export default function RegistroPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#121212]/60 to-[#121212] z-10"></div>
         {/* Usamos una imagen cálida similar al login, luego podés cambiarla por la tuya */}
         <img 
-          src="https://images.unsplash.com/photo-1517686469429-8bdb88b9f907?q=80&w=800&auto=format&fit=crop" 
+          src="/tazas-inicio.png" 
           alt="Fondo registro" 
           className="w-full h-full object-cover object-center opacity-80"
         />
