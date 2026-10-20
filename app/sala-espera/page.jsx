@@ -24,70 +24,56 @@ export default function SalaEsperaPage() {
   const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
-    cargarEstadoYEscuchar();
-  }, []);
+    let isMounted = true;
+    let intervalId = null;
 
-  const cargarEstadoYEscuchar = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        router.push("/");
-        return;
-      }
-
-      const userId = session.user.id;
-
-      // 1. Consultamos el estado inicial
-      const { data: estado, error } = await supabase.rpc('my_couple');
-      if (error) throw error;
-
-      const inviteCode = estado?.invite_code;
-      const coupleId = estado?.couple_id;
-      
-      // Si ya está vinculado, al menú
-      if (coupleId && !inviteCode) {
-        router.push("/menu");
-        return;
-      }
-
-      if (inviteCode) {
-        setMyCode(inviteCode);
-      } else {
-        const metadataName = session.user.user_metadata?.first_name;
-        if (metadataName) {
-          await generarCodigo(metadataName);
-        } else {
-          setNeedsName(true);
+    const verificarEstado = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          if (isMounted) router.push("/");
+          return;
         }
-      }
 
-      // 2. RADAR EN TIEMPO REAL: Si el Usuario B está esperando en esta pantalla, 
-      // escuchamos si se crea su vínculo para mandarlo al menú automáticamente.
-      const channel = supabase
-        .channel('sala-espera-realtime')
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'couple_members' },
-          async (payload) => {
-            // Volvemos a consultar el estado por si nos vinculamos
-            const { data: checkEstado } = await supabase.rpc('my_couple');
-            if (checkEstado?.couple_id && !checkEstado?.invite_code) {
-              router.push("/menu");
-            }
+        const { data: estado, error } = await supabase.rpc('my_couple');
+        if (error) throw error;
+
+        const inviteCode = estado?.invite_code;
+        const coupleId = estado?.couple_id;
+        
+        // Si ya está vinculado, redirigimos al menú de inmediato
+        if (coupleId && !inviteCode) {
+          if (isMounted) router.push("/menu");
+          return;
+        }
+
+        if (inviteCode) {
+          if (isMounted) setMyCode(inviteCode);
+        } else if (isMounted && !myCode) {
+          const metadataName = session.user.user_metadata?.first_name;
+          if (metadataName) {
+            await generarCodigo(metadataName);
+          } else {
+            setNeedsName(true);
           }
-        )
-        .subscribe();
+        }
+      } catch (error) {
+        console.error("Error verificando estado de pareja:", error);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
 
-      return () => {
-        supabase.removeChannel(channel);
-      };
+    verificarEstado();
 
-    } catch (error) {
-      console.error("Error cargando estado:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    // POLLING PROFESIONAL: Consultamos cada 3 segundos para asegurar que el Usuario B salte al menú automáticamente
+    intervalId = setInterval(verificarEstado, 3000);
+
+    return () => {
+      isMounted = false;
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [router, myCode]);
 
   const generarCodigo = async (nombre) => {
     try {
@@ -157,7 +143,7 @@ export default function SalaEsperaPage() {
         return;
       }
 
-      // ¡Conectados! Al unirse el Usuario A, viaja al menú (y el canal en tiempo real manda al B)
+      // ¡Conectados con éxito!
       router.push("/menu");
 
     } catch (error) {
