@@ -18,15 +18,16 @@ export default function SalaEsperaPage() {
   const [nameInput, setNameInput] = useState("");
   const [isSavingName, setIsSavingName] = useState(false);
 
+  const [joinNameInput, setJoinNameInput] = useState("");
   const [partnerCodeInput, setPartnerCodeInput] = useState("");
   const [isConnecting, setIsConnecting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
-    cargarEstado();
+    cargarEstadoYEscuchar();
   }, []);
 
-  const cargarEstado = async () => {
+  const cargarEstadoYEscuchar = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -34,33 +35,53 @@ export default function SalaEsperaPage() {
         return;
       }
 
-      // 1. Consultamos my_couple
+      const userId = session.user.id;
+
+      // 1. Consultamos el estado inicial
       const { data: estado, error } = await supabase.rpc('my_couple');
       if (error) throw error;
 
-      // Extraemos los datos sabiendo ahora que la llave es invite_code
       const inviteCode = estado?.invite_code;
       const coupleId = estado?.couple_id;
       
-      // Si hay un ID de pareja pero NO hay código de invitación, ya están unidos
+      // Si ya está vinculado, al menú
       if (coupleId && !inviteCode) {
         router.push("/menu");
         return;
       }
 
-      // Si tiene código generado, lo mostramos
       if (inviteCode) {
         setMyCode(inviteCode);
       } else {
-        // Si no tiene nada, probamos si sabemos su nombre
         const metadataName = session.user.user_metadata?.first_name;
-        
         if (metadataName) {
           await generarCodigo(metadataName);
         } else {
           setNeedsName(true);
         }
       }
+
+      // 2. RADAR EN TIEMPO REAL: Si el Usuario B está esperando en esta pantalla, 
+      // escuchamos si se crea su vínculo para mandarlo al menú automáticamente.
+      const channel = supabase
+        .channel('sala-espera-realtime')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'couple_members' },
+          async (payload) => {
+            // Volvemos a consultar el estado por si nos vinculamos
+            const { data: checkEstado } = await supabase.rpc('my_couple');
+            if (checkEstado?.couple_id && !checkEstado?.invite_code) {
+              router.push("/menu");
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+
     } catch (error) {
       console.error("Error cargando estado:", error);
     } finally {
@@ -79,7 +100,6 @@ export default function SalaEsperaPage() {
 
       if (error) throw error;
       
-      // ACÁ ESTABA EL ERROR: Ahora leemos 'invite_code' exactamente como lo devuelve la BD
       const codigoReal = respuesta?.invite_code;
       
       if (codigoReal) {
@@ -91,7 +111,7 @@ export default function SalaEsperaPage() {
       
     } catch (error) {
       console.error("Error generando código:", error);
-      setErrorMsg("No pudimos generar tu código: " + (error.message || "Error desconocido"));
+      setErrorMsg("No pudimos generar tu código: " + (error.message || "Error"));
     } finally {
       setIsSavingName(false);
     }
@@ -102,10 +122,6 @@ export default function SalaEsperaPage() {
     if (!nameInput.trim()) return;
     await generarCodigo(nameInput.trim());
   };
-
-
-  // ESTADO NUEVO PARA EL NOMBRE AL UNIRSE (si no lo tenía)
-  const [joinNameInput, setJoinNameInput] = useState("");
 
   const handleConnect = async (e) => {
     e.preventDefault();
@@ -118,11 +134,8 @@ export default function SalaEsperaPage() {
     setErrorMsg("");
 
     try {
-      // Intentamos sacar el nombre de la sesión actual por si ya lo tiene guardado
       const { data: { session } } = await supabase.auth.getSession();
       const defaultName = session?.user?.user_metadata?.first_name;
-
-      // Usamos el nombre que tipea si lo puso, o el de la sesión
       const finalName = joinNameInput.trim() || defaultName;
 
       if (!finalName) {
@@ -144,12 +157,12 @@ export default function SalaEsperaPage() {
         return;
       }
 
-      // ¡Conectados con éxito!
+      // ¡Conectados! Al unirse el Usuario A, viaja al menú (y el canal en tiempo real manda al B)
       router.push("/menu");
 
     } catch (error) {
       console.error("Error al conectar:", error);
-      setErrorMsg("Error: " + (error.message || "No se pudo vincular."));
+      setErrorMsg("El código es incorrecto o hubo un problema al vincular.");
     } finally {
       setIsConnecting(false);
     }
@@ -190,7 +203,7 @@ export default function SalaEsperaPage() {
               </div>
               <h2 className="text-2xl font-semibold text-white mb-2">¿Cómo te llamás?</h2>
               <p className="text-sm text-zinc-400 font-light px-4">
-                Como ingresaste con Google o correo nuevo, necesitamos saber tu nombre para la app.
+                Necesitamos saber tu nombre para configurar su espacio.
               </p>
             </div>
 
@@ -221,7 +234,7 @@ export default function SalaEsperaPage() {
               </div>
               <h2 className="text-2xl font-semibold text-white mb-2">Conectá con tu pareja</h2>
               <p className="text-sm text-zinc-400 font-light px-4">
-                Para empezar a compartir su espacio, necesitás vincular tu cuenta.
+                Compartile tu código o ingresá el suyo para unirse.
               </p>
             </div>
 
@@ -251,7 +264,6 @@ export default function SalaEsperaPage() {
             <form onSubmit={handleConnect} className="animate-in fade-in slide-in-from-bottom-6 duration-700 delay-500 space-y-4">
               {errorMsg && <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mb-2"><p className="text-xs text-red-400 text-center font-medium">{errorMsg}</p></div>}
               
-              {/* INPUT DE TU NOMBRE PARA LOS QUE SE UNEN */}
               <div className="relative">
                 <input 
                   type="text" 
@@ -262,7 +274,6 @@ export default function SalaEsperaPage() {
                 />
               </div>
 
-              {/* INPUT DEL CÓDIGO DE LA PAREJA */}
               <div className="relative">
                 <input 
                   type="text" 
