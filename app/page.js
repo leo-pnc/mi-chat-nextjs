@@ -62,7 +62,6 @@ export default function LoginPage() {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          // Esto asegura que Google te devuelva a tu web una vez que elijas la cuenta
           redirectTo: `${window.location.origin}/sala-espera`,
           queryParams: {
             access_type: 'offline',
@@ -72,15 +71,10 @@ export default function LoginPage() {
       });
 
       if (error) throw error;
-      
-      // Nota: No ponemos router.push acá porque signInWithOAuth 
-      // recarga la página para ir a Google automáticamente.
 
     } catch (error) {
       console.error("Error con Google:", error.message);
-      // Si estás en el archivo de Login usá: setErrorMsg("Error al conectar con Google")
-      // Si estás en el archivo de Registro usá: setErrors({ ...errors, global: "Error con Google" })
-      alert("Hubo un error al intentar abrir Google.");
+      setErrorMsg("Hubo un error al intentar conectar con Google.");
     }
   };
 
