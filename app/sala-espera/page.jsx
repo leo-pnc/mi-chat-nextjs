@@ -29,6 +29,7 @@ export default function SalaEsperaPage() {
   }, []);
 
   // 1. CONSULTAR EL ESTADO MEDIANTE RPC
+  // 1. CONSULTAR EL ESTADO MEDIANTE RPC
   const cargarEstado = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -37,26 +38,27 @@ export default function SalaEsperaPage() {
         return;
       }
 
-      // CAMBIÁ 'obtener_estado_pareja' POR EL NOMBRE DE TU FUNCIÓN EN SUPABASE
-      // Asumimos que devuelve un objeto con: { tiene_pareja, codigo, nombre }
       const { data: estado, error } = await supabase.rpc('my_couple');
-
       if (error) throw error;
 
+      // Buscamos las variables tanto en inglés como en español por si acaso
+      const tienePareja = estado?.has_partner || estado?.tiene_pareja;
+      const codigoAsignado = estado?.code || estado?.codigo;
+      const nombreDB = estado?.display_name || estado?.nombre;
+
       // Si ya está vinculado, vuela directo al menú
-      if (estado?.tiene_pareja) {
+      if (tienePareja) {
         router.push("/menu");
         return;
       }
 
       // Si ya tiene código, se lo mostramos
-      if (estado?.codigo) {
-        setMyCode(estado.codigo);
+      if (codigoAsignado) {
+        setMyCode(codigoAsignado);
       } else {
         // Si no tiene código, revisamos si sabemos su nombre
         const metadataName = session.user.user_metadata?.first_name;
-        const dbName = estado?.nombre;
-        const finalName = dbName || metadataName;
+        const finalName = nombreDB || metadataName;
 
         if (finalName) {
           // Si tiene nombre, le generamos el código automáticamente
@@ -79,15 +81,17 @@ export default function SalaEsperaPage() {
       setIsSavingName(true);
       setErrorMsg(null);
       
-      // CAMBIÁ 'crear_codigo_pareja' POR EL NOMBRE DE TU FUNCIÓN EN SUPABASE
-      const { data: nuevoCodigo, error } = await supabase.rpc('create_couple', { 
+      const { data: respuesta, error } = await supabase.rpc('create_couple', { 
         p_display_name: nombre 
       });
 
       if (error) throw error;
       
-      setMyCode(nuevoCodigo);
-      setNeedsName(false);
+      // Acá está la magia: extraemos solo el texto del código desde adentro del JSON
+      const codigoReal = respuesta?.code || respuesta?.codigo || respuesta;
+      
+      setMyCode(codigoReal);
+      setNeedsName(false); // Ocultamos la pantalla del nombre
     } catch (error) {
       console.error("Error generando código:", error);
       setErrorMsg("No pudimos generar tu código. Intentá de nuevo.");
