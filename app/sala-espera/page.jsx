@@ -116,7 +116,7 @@ export default function SalaEsperaPage() {
     try {
       const { data: resultado, error } = await supabase.rpc('join_couple', { 
         p_code: partnerCodeInput.trim().toUpperCase(),
-        p_display_name: nameInput.trim() || undefined
+        p_display_name: nameInput.trim() || null 
       });
 
       if (error) throw error;
