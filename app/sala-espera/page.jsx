@@ -1,165 +1,233 @@
 "use client";
-import { useState } from "react";
-import { Heart, Copy, Check, ArrowRight, MessageCircle, Mail, Coffee } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabaseClient";
+import { Heart, Copy, Check, ArrowRight, Loader2 } from "lucide-react";
 import { Dancing_Script } from 'next/font/google';
-import Image from "next/image";
 
-const dancingFont = Dancing_Script({ subsets: ['latin'], weight: ['400', '600', '700'] });
+const dancingFont = Dancing_Script({ subsets: ['latin'], weight: ['400', '700'] });
 
 export default function SalaEsperaPage() {
-  const [inviteCode] = useState("TECI-8X9P"); // Código generado (simulado)
-  const [enteredCode, setEnteredCode] = useState("");
-  const [isCopied, setIsCopied] = useState(false);
+  const router = useRouter();
+  
+  // Estados para el código propio
+  const [myCode, setMyCode] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [currentUserEmail, setCurrentUserEmail] = useState("");
+  const [isLoadingCode, setIsLoadingCode] = useState(true);
 
-  // Foto de perfil del usuario logueado
-  const USER_AVATAR = "https://images.unsplash.com/photo-1518199266791-5375a83190b7?q=80&w=100&auto=format&fit=crop";
+  // Estados para conectar con la pareja
+  const [partnerCodeInput, setPartnerCodeInput] = useState("");
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState(null);
 
-  const handleCopyCode = () => {
-    navigator.clipboard.writeText(inviteCode);
-    setIsCopied(true);
-    setTimeout(() => setIsCopied(false), 2000);
+  useEffect(() => {
+    cargarUsuarioYCodigo();
+  }, []);
+
+  // 1. CARGAR USUARIO Y SU CÓDIGO
+  const cargarUsuarioYCodigo = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.push("/login");
+        return;
+      }
+      
+      const email = session.user.email;
+      setCurrentUserEmail(email);
+
+      // Buscamos si el usuario ya tiene un perfil en Supabase
+      const { data: perfil } = await supabase
+        .from('perfiles')
+        .select('*')
+        .eq('email', email)
+        .single();
+
+      if (perfil) {
+        // Si ya está vinculado con alguien, lo mandamos al menú
+        if (perfil.pareja_email) {
+          router.push("/menu");
+          return;
+        }
+        // Si no está vinculado pero ya tenía código, se lo mostramos
+        if (perfil.codigo_conexion) {
+          setMyCode(perfil.codigo_conexion);
+        } else {
+          generarYGuardarCodigo(email);
+        }
+      } else {
+        // Si no tiene perfil en la BD, se lo creamos con un código nuevo
+        generarYGuardarCodigo(email, session.user.user_metadata?.first_name);
+      }
+    } catch (error) {
+      console.error("Error cargando perfil:", error);
+    } finally {
+      setIsLoadingCode(false);
+    }
   };
 
-  const handleShareWhatsApp = () => {
-    const text = `¡Hola! Creé nuestro espacio en Tecito ☕❤️.\n\nIngresá este código mágico para conectarte conmigo: *${inviteCode}*\n\n¡Te espero!`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  // 2. GENERADOR DE CÓDIGO ALEATORIO
+  const generarYGuardarCodigo = async (email, firstName = "") => {
+    // Generamos un código de 6 caracteres (ej: AB89XQ)
+    const nuevoCodigo = Math.random().toString(36).substring(2, 8).toUpperCase();
+    setMyCode(nuevoCodigo);
+
+    await supabase.from('perfiles').upsert({
+      email: email,
+      nombre: firstName,
+      codigo_conexion: nuevoCodigo
+    });
   };
 
-  const handleJoin = (e) => {
+  // 3. FUNCIÓN PARA COPIAR EL CÓDIGO
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(myCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // 4. LÓGICA PARA CONECTARSE
+  const handleConnect = async (e) => {
     e.preventDefault();
-    if (!enteredCode.trim()) return;
-    console.log("Intentando unir con código:", enteredCode);
-    // Acá iría la lógica de Supabase para buscar el código y vincular cuentas
+    if (partnerCodeInput.trim() === myCode) {
+      setErrorMsg("No podés conectarte con tu propio código.");
+      return;
+    }
+
+    setIsConnecting(true);
+    setErrorMsg(null);
+
+    try {
+      // Buscamos a quién le pertenece el código ingresado
+      const { data: pareja } = await supabase
+        .from('perfiles')
+        .select('*')
+        .eq('codigo_conexion', partnerCodeInput.trim().toUpperCase())
+        .single();
+
+      if (!pareja) {
+        setErrorMsg("El código no existe o es incorrecto.");
+        setIsConnecting(false);
+        return;
+      }
+
+      // Si existe, nos vinculamos mutuamente
+      // A mí me pone el email de mi pareja
+      await supabase.from('perfiles').update({ pareja_email: pareja.email }).eq('email', currentUserEmail);
+      
+      // A mi pareja le pone mi email
+      await supabase.from('perfiles').update({ pareja_email: currentUserEmail }).eq('email', pareja.email);
+
+      // ¡Conectados! Redirigimos al menú
+      router.push("/menu");
+
+    } catch (error) {
+      console.error("Error al conectar:", error);
+      setErrorMsg("Hubo un error al intentar vincular las cuentas.");
+    } finally {
+      setIsConnecting(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[#101010] text-zinc-200 font-sans p-6 flex flex-col overflow-y-auto custom-scrollbar">
+    // ACÁ ARREGLAMOS EL SCROLL: overflow-y-auto en lugar de overflow-hidden
+    <div className="min-h-screen bg-[#121212] flex flex-col relative overflow-y-auto font-sans text-zinc-200 pb-10">
       
-      {/* HEADER */}
-      <div className="flex justify-between items-start mt-6 mb-3">
-        <h1 className={`text-[46px] text-white flex items-center gap-1 leading-none ${dancingFont.className}`}>
-          Sala de Espera 
-          <Heart size={30} className="text-[#F2879D] ml-1 mt-2" strokeWidth={2.5} fill="transparent" />
-        </h1>
-        
-        {/* Avatar del usuario (Arriba a la derecha) */}
-        <div className="w-11 h-11 rounded-full border border-zinc-700 overflow-hidden shadow-sm flex-shrink-0">
-          <img src={USER_AVATAR} alt="Mi perfil" className="w-full h-full object-cover" />
+      {/* HEADER SIN LA FOTO */}
+      <header className="flex justify-between items-center px-6 pt-10 pb-4 relative z-10">
+        <div className="flex items-center">
+          <h1 className={`text-[38px] text-[#FDF2F2] tracking-wide font-normal leading-none mt-1 ${dancingFont.className}`}>
+            Tecito
+          </h1>
+          <Heart size={24} strokeWidth={2.5} className="text-[#F2879D] ml-2 mt-1" fill="transparent" />
         </div>
-      </div>
+      </header>
 
-      {/* SUBTÍTULO */}
-      <p className="text-[13px] text-zinc-400 font-light leading-relaxed mb-8 pr-4 tracking-wide">
-        Aún no están conectados... pero ya es un gran paso.<br/>
-        Elijan cómo quieren empezar su historia en Tecito. <Heart size={12} className="inline text-[#F2879D]" />
-      </p>
-
-      {/* TARJETA - OPCIÓN A */}
-      <div className="bg-[#161616] border border-zinc-800/80 rounded-[24px] p-6 mb-5 shadow-lg relative overflow-hidden">
+      {/* CONTENIDO PRINCIPAL */}
+      <div className="flex-1 flex flex-col px-6 pt-6 relative z-10">
         
-        {/* Ilustración simulada (Tazas) */}
-        <div className="mb-4 flex items-center justify-start gap-1 text-[#F497A9]">
-          <div className="relative">
-            <Coffee size={40} strokeWidth={1.5} />
-            <Heart size={14} className="absolute -top-1 -right-2 text-[#F2879D]" fill="#F2879D"/>
+        <div className="text-center mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="w-16 h-16 bg-[#1A1A1A] rounded-full flex items-center justify-center mx-auto mb-4 border border-zinc-800 shadow-[0_0_20px_rgba(242,135,157,0.1)]">
+            <Heart size={28} className="text-[#F2879D]" fill="#F2879D" />
           </div>
-          <div className="relative mt-3 ml-1">
-            <Coffee size={36} strokeWidth={1.5} />
-            <Heart size={12} className="absolute top-1 right-2 text-[#F2879D]" />
+          <h2 className="text-2xl font-semibold text-white mb-2">Conectá con tu pareja</h2>
+          <p className="text-sm text-zinc-400 font-light leading-relaxed px-4">
+            Para empezar a compartir su espacio privado, necesitás vincular tu cuenta con la de esa persona especial.
+          </p>
+        </div>
+
+        {/* TU CÓDIGO */}
+        <div className="bg-[#1A1A1A]/80 border border-zinc-800/80 rounded-3xl p-6 mb-6 relative overflow-hidden animate-in fade-in slide-in-from-bottom-6 duration-700 delay-150">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#F497A9] to-[#F2879D]"></div>
+          <p className="text-[11px] uppercase tracking-widest text-zinc-500 font-semibold mb-3 text-center">
+            Compartile este código
+          </p>
+          
+          <div className="flex items-center justify-between bg-[#121212] border border-zinc-800 rounded-2xl p-4">
+            {isLoadingCode ? (
+              <div className="w-full flex justify-center"><Loader2 className="animate-spin text-[#F2879D]" size={24} /></div>
+            ) : (
+              <span className="text-3xl font-mono tracking-[0.2em] text-white font-bold ml-2">
+                {myCode}
+              </span>
+            )}
+            <button 
+              onClick={copyToClipboard}
+              disabled={isLoadingCode}
+              className={`p-3 rounded-xl transition-all duration-300 flex items-center justify-center ${
+                copied ? 'bg-green-500/20 text-green-400' : 'bg-[#1C1C1E] text-zinc-400 hover:text-white border border-zinc-800'
+              }`}
+            >
+              {copied ? <Check size={20} /> : <Copy size={20} />}
+            </button>
           </div>
+          <p className="text-xs text-zinc-500 text-center mt-4">
+            Tu pareja debe ingresarlo en su pantalla de Tecito.
+          </p>
         </div>
 
-        <div className="inline-block bg-[#F2879D]/15 text-[#F2879D] text-[10px] font-bold px-3 py-1 rounded-full mb-3">
-          Opción A
-        </div>
-        
-        <h2 className={`text-[28px] text-white leading-none mb-2 ${dancingFont.className}`}>
-          Crear nuestro espacio
-        </h2>
-        
-        <p className="text-xs text-zinc-400 leading-relaxed mb-5 pr-2">
-          Generá un código de pareja y compartilo con tu persona. ¡Así podrán empezar a usar la app juntos!
-        </p>
-
-        {/* Caja de Código */}
-        <div className="flex items-center justify-between bg-[#0F0F0F] border border-zinc-800/80 rounded-2xl p-1 pl-5 mb-5 w-4/5 mx-auto">
-          <span className="text-[#F2879D] font-mono text-sm font-medium tracking-widest">
-            {inviteCode}
-          </span>
-          <button 
-            onClick={handleCopyCode}
-            className="p-3 text-zinc-400 hover:text-white transition-colors border-l border-zinc-800/80"
-          >
-            {isCopied ? <Check size={18} className="text-green-400" /> : <Copy size={18} />}
-          </button>
+        <div className="flex items-center gap-4 my-4 animate-in fade-in duration-700 delay-300">
+          <div className="h-px bg-zinc-800 flex-1"></div>
+          <span className="text-zinc-600 text-xs font-medium">O INGRESÁ EL SUYO</span>
+          <div className="h-px bg-zinc-800 flex-1"></div>
         </div>
 
-        {/* Botón WhatsApp */}
-        <button 
-          onClick={handleShareWhatsApp}
-          className="w-full bg-[#F2879D] text-black font-semibold rounded-2xl py-3.5 flex items-center justify-center gap-2 active:scale-[0.98] transition-all text-[13px] shadow-[0_4px_15px_rgba(242,135,157,0.15)]"
-        >
-          <MessageCircle size={18} />
-          Compartir invitación por WhatsApp <ArrowRight size={16} />
-        </button>
-      </div>
+        {/* INGRESAR CÓDIGO */}
+        <form onSubmit={handleConnect} className="animate-in fade-in slide-in-from-bottom-6 duration-700 delay-500">
+          
+          {errorMsg && (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mb-4">
+              <p className="text-xs text-red-400 text-center font-medium">{errorMsg}</p>
+            </div>
+          )}
 
-      {/* TARJETA - OPCIÓN B */}
-      <div className="bg-[#161616] border border-zinc-800/80 rounded-[24px] p-6 mb-8 shadow-lg relative overflow-hidden">
-        
-        {/* Ilustración simulada (Carta) */}
-        <div className="mb-4 text-[#F497A9] relative w-12">
-          <Mail size={42} strokeWidth={1.2} />
-          <Heart size={16} className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[#F2879D]" fill="#F2879D" />
-          <div className="absolute -top-1 -right-4 flex flex-col gap-1">
-             <div className="w-1.5 h-1.5 rounded-full bg-[#F2879D]/60"></div>
-             <div className="w-1 h-1 rounded-full bg-[#F2879D]/40 ml-2"></div>
+          <div className="relative mb-6">
+            <input 
+              type="text" 
+              placeholder="Ej: AB89XQ"
+              value={partnerCodeInput}
+              onChange={(e) => {setPartnerCodeInput(e.target.value.toUpperCase()); setErrorMsg(null);}}
+              maxLength={6}
+              className="w-full bg-[#1A1A1A]/80 border border-zinc-800/80 text-white font-mono text-center tracking-[0.2em] text-lg rounded-2xl py-4 focus:outline-none focus:border-[#F2879D] transition-colors placeholder:text-zinc-700"
+              required
+            />
           </div>
-        </div>
-
-        <div className="inline-block bg-[#F2879D]/15 text-[#F2879D] text-[10px] font-bold px-3 py-1 rounded-full mb-3">
-          Opción B
-        </div>
-        
-        <h2 className={`text-[28px] text-white leading-none mb-2 ${dancingFont.className}`}>
-          Tengo un código de mi pareja
-        </h2>
-        
-        <p className="text-xs text-zinc-400 leading-relaxed mb-5 pr-4">
-          Ingresá el código que te pasaron y conectate.
-        </p>
-
-        <form onSubmit={handleJoin} className="space-y-4">
-          <input 
-            type="text" 
-            placeholder="Ej: TECI-8X9P"
-            value={enteredCode}
-            onChange={(e) => setEnteredCode(e.target.value.toUpperCase())}
-            className="w-full bg-[#0F0F0F] border border-zinc-800/80 text-white font-mono rounded-2xl p-4 focus:outline-none focus:border-[#F2879D] transition-colors placeholder:text-zinc-600 text-sm tracking-wider uppercase text-center"
-          />
 
           <button 
             type="submit"
-            disabled={!enteredCode.trim()}
-            className="w-full bg-[#F2879D] text-black font-semibold rounded-2xl py-3.5 flex items-center justify-center gap-2 active:scale-[0.98] transition-all text-[13px] disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isConnecting || partnerCodeInput.length < 6}
+            className="w-full bg-gradient-to-r from-[#F497A9] to-[#F2879D] text-black font-semibold rounded-full py-4 flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-[0_4px_15px_rgba(242,135,157,0.2)] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Unirme <ArrowRight size={16} />
+            {isConnecting ? (
+              <><Loader2 className="animate-spin" size={20} /> Conectando...</>
+            ) : (
+              <>Vincular cuentas <ArrowRight size={18} /></>
+            )}
           </button>
         </form>
-      </div>
 
-      {/* FOOTER - DIVISOR */}
-      <div className="mt-auto mb-6 flex flex-col items-center justify-center animate-in fade-in duration-1000 delay-500">
-        <div className="flex items-center w-full max-w-[200px] mb-3 opacity-30">
-          <div className="h-px bg-zinc-600 flex-1"></div>
-          <Heart size={14} className="text-zinc-500 mx-3" />
-          <div className="h-px bg-zinc-600 flex-1"></div>
-        </div>
-        <p className="text-[11px] text-zinc-500 font-medium tracking-wide">
-          Dos personas, un mismo lugar <Heart size={10} className="inline text-[#F2879D] ml-0.5" />
-        </p>
       </div>
-
     </div>
   );
 }
