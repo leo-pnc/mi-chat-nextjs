@@ -103,6 +103,10 @@ export default function SalaEsperaPage() {
     await generarCodigo(nameInput.trim());
   };
 
+
+  // ESTADO NUEVO PARA EL NOMBRE AL UNIRSE (si no lo tenía)
+  const [joinNameInput, setJoinNameInput] = useState("");
+
   const handleConnect = async (e) => {
     e.preventDefault();
     if (partnerCodeInput.trim() === myCode) {
@@ -114,9 +118,22 @@ export default function SalaEsperaPage() {
     setErrorMsg("");
 
     try {
+      // Intentamos sacar el nombre de la sesión actual por si ya lo tiene guardado
+      const { data: { session } } = await supabase.auth.getSession();
+      const defaultName = session?.user?.user_metadata?.first_name;
+
+      // Usamos el nombre que tipea si lo puso, o el de la sesión
+      const finalName = joinNameInput.trim() || defaultName;
+
+      if (!finalName) {
+        setErrorMsg("Por favor, ingresá tu nombre para unirte.");
+        setIsConnecting(false);
+        return;
+      }
+
       const { data: resultado, error } = await supabase.rpc('join_couple', { 
         p_code: partnerCodeInput.trim().toUpperCase(),
-        p_display_name: nameInput.trim() || null 
+        p_display_name: finalName
       });
 
       if (error) throw error;
@@ -127,13 +144,12 @@ export default function SalaEsperaPage() {
         return;
       }
 
-      // ¡Conectados!
+      // ¡Conectados con éxito!
       router.push("/menu");
 
     } catch (error) {
       console.error("Error al conectar:", error);
-      // TRUCO PARA VER EL ERROR REAL EN PANTALLA:
-      setErrorMsg("Error real: " + (error.message || error.details || JSON.stringify(error)));
+      setErrorMsg("Error: " + (error.message || "No se pudo vincular."));
     } finally {
       setIsConnecting(false);
     }
@@ -232,12 +248,25 @@ export default function SalaEsperaPage() {
               <div className="h-px bg-zinc-800 flex-1"></div>
             </div>
 
-            <form onSubmit={handleConnect} className="animate-in fade-in slide-in-from-bottom-6 duration-700 delay-500">
-              {errorMsg && <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mb-4"><p className="text-xs text-red-400 text-center font-medium">{errorMsg}</p></div>}
-              <div className="relative mb-6">
+            <form onSubmit={handleConnect} className="animate-in fade-in slide-in-from-bottom-6 duration-700 delay-500 space-y-4">
+              {errorMsg && <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mb-2"><p className="text-xs text-red-400 text-center font-medium">{errorMsg}</p></div>}
+              
+              {/* INPUT DE TU NOMBRE PARA LOS QUE SE UNEN */}
+              <div className="relative">
                 <input 
                   type="text" 
-                  placeholder="Ej: AB89XQ"
+                  placeholder="Tu nombre (ej: Leo)"
+                  value={joinNameInput}
+                  onChange={(e) => {setJoinNameInput(e.target.value); setErrorMsg("");}}
+                  className="w-full bg-[#1A1A1A]/80 border border-zinc-800/80 text-white text-center text-sm rounded-2xl py-3.5 focus:outline-none focus:border-[#F2879D] transition-colors placeholder:text-zinc-600"
+                />
+              </div>
+
+              {/* INPUT DEL CÓDIGO DE LA PAREJA */}
+              <div className="relative">
+                <input 
+                  type="text" 
+                  placeholder="Código de tu pareja (Ej: AB89XQ)"
                   value={partnerCodeInput}
                   onChange={(e) => {setPartnerCodeInput(e.target.value.toUpperCase()); setErrorMsg("");}}
                   maxLength={6}
@@ -245,6 +274,7 @@ export default function SalaEsperaPage() {
                   required
                 />
               </div>
+
               <button 
                 type="submit"
                 disabled={isConnecting || partnerCodeInput.length < 6}
