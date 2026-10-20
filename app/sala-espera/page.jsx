@@ -132,7 +132,8 @@ export default function SalaEsperaPage() {
 
     } catch (error) {
       console.error("Error al conectar:", error);
-      setErrorMsg("El código es incorrecto o hubo un problema al vincular.");
+      // TRUCO PARA VER EL ERROR REAL EN PANTALLA:
+      setErrorMsg("Error real: " + (error.message || error.details || JSON.stringify(error)));
     } finally {
       setIsConnecting(false);
     }
