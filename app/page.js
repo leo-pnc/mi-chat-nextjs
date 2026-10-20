@@ -57,8 +57,31 @@ export default function LoginPage() {
   };
 
   // Función temporal para el botón de Google (lo armaremos en el próximo paso)
-  const handleGoogleLogin = () => {
-    console.log("Iniciando con Google... (Próximamente)");
+  const handleGoogleLogin = async () => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          // Esto asegura que Google te devuelva a tu web una vez que elijas la cuenta
+          redirectTo: `${window.location.origin}/sala-espera`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        }
+      });
+
+      if (error) throw error;
+      
+      // Nota: No ponemos router.push acá porque signInWithOAuth 
+      // recarga la página para ir a Google automáticamente.
+
+    } catch (error) {
+      console.error("Error con Google:", error.message);
+      // Si estás en el archivo de Login usá: setErrorMsg("Error al conectar con Google")
+      // Si estás en el archivo de Registro usá: setErrors({ ...errors, global: "Error con Google" })
+      alert("Hubo un error al intentar abrir Google.");
+    }
   };
 
   return (

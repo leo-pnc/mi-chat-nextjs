@@ -77,6 +77,27 @@ export default function RegistroPage() {
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleGoogleLogin = async () => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/sala-espera`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        }
+      });
+
+      if (error) throw error;
+
+    } catch (error) {
+      console.error("Error con Google:", error.message);
+      setErrors({ ...errors, email: "Hubo un error al intentar abrir Google." });
+    }
+  };
+
   const handleRegister = async (e) => {
     e.preventDefault();
     if (validateForm()) {
@@ -269,13 +290,19 @@ export default function RegistroPage() {
           </button>
         </form>
 
-        <div className="flex items-center gap-4 my-4">
+        {/* DIVISOR */}
+        <div className="flex items-center gap-4 my-6">
           <div className="h-px bg-zinc-800 flex-1"></div>
           <span className="text-zinc-600 text-xs font-medium">o</span>
           <div className="h-px bg-zinc-800 flex-1"></div>
         </div>
 
-        <button type="button" className="w-full bg-transparent border border-zinc-800 hover:bg-zinc-900/50 text-zinc-300 rounded-full py-3.5 flex items-center justify-center gap-3 active:scale-[0.98] transition-all text-sm mb-5">
+        {/* BOTÓN DE GOOGLE */}
+        <button 
+          type="button"
+          onClick={handleGoogleLogin}
+          className="w-full bg-transparent border border-zinc-800 hover:bg-zinc-900/50 text-zinc-300 rounded-full py-3.5 flex items-center justify-center gap-3 active:scale-[0.98] transition-all text-sm"
+        >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
             <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
